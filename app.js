@@ -57,6 +57,7 @@ var returndeliveryRouter = require('./routes/itemRoutes')
 var ToolStockRouter = require('./routes/itemRoutes');
 
 var workOrderRouter = require('./routes/itemRoutes');
+const { version } = require('os');
 
 
 const PORT = process.env.PORT || 8001;
@@ -117,19 +118,19 @@ app.use('/activeworkers', ActiveworkerRouter);
 app.use('/activemachines', ActiveMachineRouter);
 app.use('/activesalesproduct', ActivesalproRouter);
 
-app.use('/activetools',activetoolRouter);
+app.use('/activetools', activetoolRouter);
 app.use('/dashboard', dashRouter);
 
 // app.use("/auth", loginRoutes);
 
 
-app.use('/custdrop',custdropRouter);
+app.use('/custdrop', custdropRouter);
 
-app.use('/delivery',deliveryRouter);
+app.use('/delivery', deliveryRouter);
 
-app.use('/returndelivery',returndeliveryRouter);
+app.use('/returndelivery', returndeliveryRouter);
 
-app.use('/Toolstock',ToolStockRouter);
+app.use('/Toolstock', ToolStockRouter);
 
 
 app.use('/workorder', workOrderRouter);
@@ -140,7 +141,7 @@ app.use('/workorder', workOrderRouter);
 
 // ================== HEALTH CHECK ==================
 app.get('/', (req, res) => {
-  res.json({ status: 1, message: "API running successfully" });
+  res.json({ status: 1, message: "API running successfully", version: "1.0.0" });
 });
 
 // ================== 404 HANDLER ==================
