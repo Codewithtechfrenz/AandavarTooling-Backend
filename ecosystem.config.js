@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "check",
+      name: "AandavarToolingBackend",
       script: "app.js",
       watch: true,
       ignore_watch: [
@@ -14,11 +14,11 @@ module.exports = {
       log: "logs/pm2/combined.outerr.log",
       env: {
         NODE_ENV: "prod",
-        PORT: 8002
+        PORT: 8882
       },
       env_local: {
         NODE_ENV: "local",
-        PORT: 8001
+        PORT: 8881
       },
     },
   ],
