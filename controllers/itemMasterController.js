@@ -1022,40 +1022,7 @@ exports.deleteMachine = (req, res) => {
 
 
 
-// // Create Item Inward
-// exports.createItemInward = (req, res) => {
-//     const reqData = req.body;
-//     const v = new Validator(reqData, {
-//         ItemID: 'required|integer',
-//         Quantity: 'required|integer|min:1',
-//         Rate: 'required|decimal',
-//         Status: 'required|string|in:Pending,Completed'
-//     });
 
-//     v.check().then((matched) => {
-//         if (!matched) {
-//             const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-//             return res.json({ status: 0, message: error_message });
-//         }
-
-//         const insertQuery = `INSERT INTO Item_Inward (ItemID, Quantity, Rate, Status) VALUES (?, ?, ?, ?)`;
-//         db.mainDb(insertQuery, [reqData.ItemID, reqData.Quantity, reqData.Rate, reqData.Status], (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB error" });
-//             return res.json({ status: 1, message: "Item inward created successfully", InwardID: result.insertId });
-//         });
-//     });
-// };
-
-// // List Item Inward
-// exports.getItemInwards = (req, res) => {
-//     db.mainDb(`SELECT ii.*, im.ItemName, im.ItemCode 
-//                FROM Item_Inward ii 
-//                JOIN Item_Master im ON ii.ItemID = im.SI 
-//                ORDER BY ii.InwardID DESC`, [], (err, result) => {
-//         if (err) return res.json({ status: 0, message: "DB error" });
-//         return res.json({ status: 1, data: result });
-//     });
-// };
 
 
 
@@ -1111,16 +1078,6 @@ exports.deleteMachine = (req, res) => {
 
 
 
-// // Get Current Stock
-// exports.getCurrentStock = (req, res) => {
-//     db.mainDb(`SELECT cs.StockID, cs.ItemID, cs.AvailableQty, cs.LastUpdated, im.ItemName, im.ItemCode
-//                FROM Current_Stock cs
-//                JOIN Item_Master im ON cs.ItemID = im.SI
-//                ORDER BY im.ItemName ASC`, [], (err, result) => {
-//         if (err) return res.json({ status: 0, message: "DB error" });
-//         return res.json({ status: 1, data: result });
-//     });
-// };
 
 
 
@@ -1129,163 +1086,40 @@ exports.deleteMachine = (req, res) => {
 
 
 
-// // controllers/itemInwardController.js
-
-
-// // Helper function to update current stock
-// async function updateStock(ItemID, qtyChange) {
-//     return new Promise((resolve, reject) => {
-//         const checkQuery = `SELECT * FROM Current_Stock WHERE ItemID = ?`;
-//         db.mainDb(checkQuery, [ItemID], (err, data) => {
-//             if (err) return reject(err);
-//             if (data.length > 0) {
-//                 // Update existing stock
-//                 const updateQuery = `UPDATE Current_Stock SET AvailableQty = AvailableQty + ?, LastUpdated = NOW() WHERE ItemID = ?`;
-//                 db.mainDb(updateQuery, [qtyChange, ItemID], (err2) => err2 ? reject(err2) : resolve(true));
-//             } else {
-//                 // Insert new stock record
-//                 const insertQuery = `INSERT INTO Current_Stock (ItemID, AvailableQty) VALUES (?, ?)`;
-//                 db.mainDb(insertQuery, [ItemID, qtyChange], (err2) => err2 ? reject(err2) : resolve(true));
-//             }
-//         });
-//     });
-// }
-
-// // Create Item Inward
 // exports.createItemInward = (req, res) => {
-//     const reqData = req.body;
-//     const v = new Validator(reqData, {
-//         ItemID: 'required|integer',
-//         Quantity: 'required|integer|min:1',
-//         Rate: 'required|decimal',
-//         Status: 'required|string|in:Pending,Completed'
-//     });
+//     const { ItemName, UOMName, Quantity, Rate, Status } = req.body;
 
-//     v.check().then(async (matched) => {
-//         if (!matched) {
-//             const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-//             return res.json({ status: 0, message: error_message });
+//     const query = `
+//         INSERT INTO Item_Inward 
+//         (ItemName, UOMName, Quantity, Rate, Status)
+//         VALUES (?, ?, ?, ?, ?)
+//     `;
+
+//     db.mainDb(query, [ItemName, UOMName, Quantity, Rate, Status], async (err, result) => {
+//         if (err) {
+//             console.error(err);
+//             return res.json({ status: 0, message: "DB Error" });
 //         }
 
-//         const insertQuery = `INSERT INTO Item_Inward (ItemID, Quantity, Rate, Status) VALUES (?, ?, ?, ?)`;
-//         db.mainDb(insertQuery, [reqData.ItemID, reqData.Quantity, reqData.Rate, reqData.Status], async (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB error" });
-
-//             // ✅ Auto update stock only if Status is Completed
-//             if (reqData.Status === 'Completed') {
-//                 try {
-//                     await updateStock(reqData.ItemID, reqData.Quantity);
-//                 } catch (stockErr) {
-//                     console.error("Stock update error:", stockErr);
-//                 }
+//         try {
+//             if (Status === "Completed") {
+//                 await updateStock(ItemName, UOMName, Quantity);
 //             }
 
-//             return res.json({ status: 1, message: "Item inward created successfully", InwardID: result.insertId });
-//         });
-//     });
-// };
+//             res.json({
+//                 status: 1,
+//                 message: "Inward created & stock updated"
+//             });
 
-
-
-
-
-
-
-
-
-
-
-
-// // controllers/lineFeedOutController.js
-
-
-// // Helper function same as above
-// async function updateStock(ItemID, qtyChange) {
-//     return new Promise((resolve, reject) => {
-//         const checkQuery = `SELECT * FROM Current_Stock WHERE ItemID = ?`;
-//         db.mainDb(checkQuery, [ItemID], (err, data) => {
-//             if (err) return reject(err);
-//             if (data.length > 0) {
-//                 const updateQuery = `UPDATE Current_Stock SET AvailableQty = AvailableQty + ?, LastUpdated = NOW() WHERE ItemID = ?`;
-//                 db.mainDb(updateQuery, [qtyChange, ItemID], (err2) => err2 ? reject(err2) : resolve(true));
-//             } else {
-//                 // If stock does not exist, insert negative value
-//                 const insertQuery = `INSERT INTO Current_Stock (ItemID, AvailableQty) VALUES (?, ?)`;
-//                 db.mainDb(insertQuery, [ItemID, qtyChange], (err2) => err2 ? reject(err2) : resolve(true));
-//             }
-//         });
-//     });
-// }
-
-// // Create Line Feed Out
-// exports.createLineFeedOut = (req, res) => {
-//     const reqData = req.body;
-//     const v = new Validator(reqData, {
-//         ItemID: 'required|integer',
-//         Quantity: 'required|integer|min:1',
-//         Status: 'required|string|in:Pending,Completed'
-//     });
-
-//     v.check().then(async (matched) => {
-//         if (!matched) {
-//             const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-//             return res.json({ status: 0, message: error_message });
+//         } catch (error) {
+//             console.error(error);
+//             res.json({
+//                 status: 0,
+//                 message: "Stock update failed"
+//             });
 //         }
-
-//         const insertQuery = `INSERT INTO Line_Feed_Out (ItemID, Quantity, Status) VALUES (?, ?, ?)`;
-//         db.mainDb(insertQuery, [reqData.ItemID, reqData.Quantity, reqData.Status], async (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB error" });
-
-//             // ✅ Auto reduce stock only if Status is Completed
-//             if (reqData.Status === 'Completed') {
-//                 try {
-//                     await updateStock(reqData.ItemID, -reqData.Quantity);
-//                 } catch (stockErr) {
-//                     console.error("Stock update error:", stockErr);
-//                 }
-//             }
-
-//             return res.json({ status: 1, message: "Line feed out created successfully", OutID: result.insertId });
-//         });
 //     });
 // };
-
-
-
-exports.createItemInward = (req, res) => {
-    const { ItemName, UOMName, Quantity, Rate, Status } = req.body;
-
-    const query = `
-        INSERT INTO Item_Inward 
-        (ItemName, UOMName, Quantity, Rate, Status)
-        VALUES (?, ?, ?, ?, ?)
-    `;
-
-    db.mainDb(query, [ItemName, UOMName, Quantity, Rate, Status], async (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.json({ status: 0, message: "DB Error" });
-        }
-
-        try {
-            if (Status === "Completed") {
-                await updateStock(ItemName, UOMName, Quantity);
-            }
-
-            res.json({
-                status: 1,
-                message: "Inward created & stock updated"
-            });
-
-        } catch (error) {
-            console.error(error);
-            res.json({
-                status: 0,
-                message: "Stock update failed"
-            });
-        }
-    });
-};
 
 
 
@@ -1293,83 +1127,51 @@ exports.createItemInward = (req, res) => {
 
 
 function updateStock(ItemName, UOMName, qtyChange) {
-    return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
 
-        const checkQuery = `
-            SELECT StockID, AvailableQty 
-            FROM current_stock 
-            WHERE ItemName = ? AND UOMName = ?
+    const checkQuery = `
+      SELECT StockID, AvailableQty 
+      FROM current_stock 
+      WHERE ItemName = ? AND UOMName = ?
+    `;
+
+    db.mainDb(checkQuery, [ItemName, UOMName], (err, result) => {
+      if (err) return reject(err);
+
+      if (result.length > 0) {
+        const updateQuery = `
+          UPDATE current_stock
+          SET AvailableQty = AvailableQty + ?,
+              LastUpdated = NOW()
+          WHERE StockID = ?
         `;
 
-        db.mainDb(checkQuery, [ItemName, UOMName], (err, result) => {
-            if (err) return reject(err);
-
-            // ✅ UPDATE
-            if (result.length > 0) {
-                const updateQuery = `
-                    UPDATE current_stock
-                    SET AvailableQty = AvailableQty + ?,
-                        LastUpdated = NOW()
-                    WHERE StockID = ?
-                `;
-
-                db.mainDb(updateQuery, [qtyChange, result[0].StockID], (err2) => {
-                    if (err2) return reject(err2);
-                    resolve();
-                });
-
-            } 
-            // ✅ INSERT
-            else {
-                const insertQuery = `
-                    INSERT INTO current_stock 
-                    (ItemName, UOMName, AvailableQty)
-                    VALUES (?, ?, ?)
-                `;
-
-                db.mainDb(insertQuery, [ItemName, UOMName, qtyChange], (err2) => {
-                    if (err2) return reject(err2);
-                    resolve();
-                });
-            }
+        db.mainDb(updateQuery, [qtyChange, result[0].StockID], (err2) => {
+          if (err2) return reject(err2);
+          resolve();
         });
+
+      } else {
+        const insertQuery = `
+          INSERT INTO current_stock 
+          (ItemName, UOMName, AvailableQty)
+          VALUES (?, ?, ?)
+        `;
+
+        db.mainDb(insertQuery, [ItemName, UOMName, qtyChange], (err2) => {
+          if (err2) return reject(err2);
+          resolve();
+        });
+      }
     });
+  });
 }
+//-=====================--------------------------==================------------------
 
 
 
 
-// Item Inward
-// exports.createItemInward = (req, res) => {
-//     const { ItemName, UOMName, Quantity, Rate, Status } = req.body;
 
-//     const v = new Validator(req.body, {
-//         ItemName: 'required|string|maxLength:150',
-//         UOMName: 'required|string|maxLength:50',
-//         Quantity: 'required|integer|min:1',
-//         Rate: 'required|decimal',
-//         Status: 'required|string|in:Pending,Completed'
-//     });
-
-//     v.check().then(async matched => {
-//         if (!matched) {
-//             const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-//             return res.json({ status: 0, message: error_message });
-//         }
-
-//         const insertQuery = `INSERT INTO Item_Inward (ItemName, UOMName, Quantity, Rate, Status) VALUES (?, ?, ?, ?, ?)`;
-//         db.mainDb(insertQuery, [ItemName, UOMName, Quantity, Rate, Status], async (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB error" });
-
-//             if (Status === 'Completed') {
-//                 try { await updateStock(ItemName, UOMName, Quantity); } 
-//                 catch (stockErr) { console.error("Stock update error:", stockErr); }
-//             }
-
-//             return res.json({ status: 1, message: "Item inward created successfully", InwardID: result.insertId });
-//         });
-//     });
-// };
 
 // Line Feed Out
 exports.createLineFeedOut = (req, res) => {
@@ -1438,17 +1240,6 @@ exports.createLineFeedOut = (req, res) => {
         });
     });
 };
-// Get Current Stock
-// exports.getCurrentStock = (req, res) => {
-//     db.mainDb(
-//         `SELECT StockID, ItemName, UOMName, AvailableQty, LastUpdated FROM Current_Stock ORDER BY ItemName ASC`,
-//         [],
-//         (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB error" });
-//             res.json({ status: 1, data: result });
-//         }
-//     );
-// };
 
 
 
@@ -1491,40 +1282,40 @@ exports.getCurrentStock = (req, res) => {
 
 
 
-async function updateStock(ItemName, UOMName, qtyChange) {
-    return new Promise((resolve, reject) => {
-        db.mainDb(
-            `SELECT StockID, AvailableQty FROM Current_Stock WHERE ItemName=? AND UOMName=?`,
-            [ItemName, UOMName],
-            (err, result) => {
-                if (err) return reject(err);
+// async function updateStock(ItemName, UOMName, qtyChange) {
+//     return new Promise((resolve, reject) => {
+//         db.mainDb(
+//             `SELECT StockID, AvailableQty FROM current_stock WHERE ItemName=? AND UOMName=?`,
+//             [ItemName, UOMName],
+//             (err, result) => {
+//                 if (err) return reject(err);
 
-                if (result.length === 0) {
-                    // Create stock row if not exists
-                    db.mainDb(
-                        `INSERT INTO Current_Stock (ItemName, UOMName, AvailableQty) VALUES (?, ?, ?)`,
-                        [ItemName, UOMName, qtyChange],
-                        (err2) => {
-                            if (err2) return reject(err2);
-                            resolve();
-                        }
-                    );
-                } else {
-                    // Update existing stock
-                    const newQty = result[0].AvailableQty + qtyChange;
-                    db.mainDb(
-                        `UPDATE Current_Stock SET AvailableQty=?, LastUpdated=NOW() WHERE StockID=?`,
-                        [newQty, result[0].StockID],
-                        (err2) => {
-                            if (err2) return reject(err2);
-                            resolve();
-                        }
-                    );
-                }
-            }
-        );
-    });
-}
+//                 if (result.length === 0) {
+//                     // Create stock row if not exists
+//                     db.mainDb(
+//                         `INSERT INTO current_stock (ItemName, UOMName, AvailableQty) VALUES (?, ?, ?)`,
+//                         [ItemName, UOMName, qtyChange],
+//                         (err2) => {
+//                             if (err2) return reject(err2);
+//                             resolve();
+//                         }
+//                     );
+//                 } else {
+//                     // Update existing stock
+//                     const newQty = result[0].AvailableQty + qtyChange;
+//                     db.mainDb(
+//                         `UPDATE current_stock SET AvailableQty=?, LastUpdated=NOW() WHERE StockID=?`,
+//                         [newQty, result[0].StockID],
+//                         (err2) => {
+//                             if (err2) return reject(err2);
+//                             resolve();
+//                         }
+//                     );
+//                 }
+//             }
+//         );
+//     });
+// }======================================================
 
 
 // Create Item Inward
@@ -1604,18 +1395,19 @@ exports.getActiveUOMs = (req, res) => {
 exports.getActiveWorkers = (req, res) => {
     const query = `
         SELECT WorkerName
-        FROM worker_master
+        FROM Worker_Master
         ORDER BY WorkerName ASC
     `;
-
+ 
     db.mainDb(query, [], (err, result) => {
         if (err) return res.json({ status: 0, message: "DB error" });
-
+ 
         // Return only array of worker names
         const workers = result.map(row => row.WorkerName);
         return res.json({ status: 1, data: workers });
     });
 };
+ 
 //------------------------------------------------------------------------------
 
 
