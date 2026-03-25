@@ -1415,10 +1415,10 @@ exports.getActiveWorkers = (req, res) => {
 // Get customer for dropdown
 exports.getdropCustomers = (req, res) => {
     const query = `
-        SELECT DISTINCT cus_name
-        FROM customer_master
-        WHERE cus_name IS NOT NULL
-        ORDER BY cus_name ASC
+        SELECT DISTINCT Cus_Name
+        FROM Customer_Master
+        WHERE Cus_Name IS NOT NULL
+        ORDER BY Cus_Name ASC
     `;
 
     db.mainDb(query, [], (err, result) => {
