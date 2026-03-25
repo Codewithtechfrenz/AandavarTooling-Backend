@@ -141,7 +141,7 @@ app.use('/workorder', workOrderRouter);
 
 // ================== HEALTH CHECK ==================
 app.get('/', (req, res) => {
-  res.json({ status: 1, message: "API running successfully", version: "1.0.3" });
+  res.json({ status: 1, message: "API running successfully", version: "1.0.4" });
 });
 
 // ================== 404 HANDLER ==================
