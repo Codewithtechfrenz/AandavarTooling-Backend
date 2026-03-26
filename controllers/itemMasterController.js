@@ -168,10 +168,10 @@ exports.createTool = (req, res) => {
     });
 
     v.check().then((matched) => {
-        if (!matched) {
-            const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-            return res.json({ status: 0, message: error_message });
-        }
+        // if (!matched) {
+        //     const error_message = Object.values(v.errors).map(e => e.message).join(", ");
+        //     return res.json({ status: 0, message: error_message });
+        // }
 
         const insertQuery = `INSERT INTO tool_master 
             (ToolName, ToolCode, CategoryName, MinStock, UOMName, Status) 
