@@ -156,156 +156,142 @@ exports.deleteItem = (req, res) => {
 
 // CREATE TOOL
 exports.createTool = (req, res) => {
-    const reqData = req.body;
+    const data = req.body;
 
-    const v = new Validator(reqData, {
-        ToolName: 'required|string|maxLength:150',
-        ToolCode: 'required|string|maxLength:50',
-        CategoryName: 'required|string|maxLength:100',
-        MinStock: 'required|integer|min:0',
-        UOMName: 'required|string|maxLength:50',
-        Status: 'required|string|in:Active,Inactive'
-    });
+    const query = `
+        INSERT INTO tool_master 
+        (ToolName, ToolCode, CategoryName, MinStock, UOMName, Status)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `;
 
-    v.check().then((matched) => {
-        // if (!matched) {
-        //     const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-        //     return res.json({ status: 0, message: error_message });
-        // }
+    db.mainDb(
+        query,
+        [
+            data.ToolName || null,
+            data.ToolCode || null,
+            data.CategoryName || null,
+            data.MinStock || 0,
+            data.UOMName || null,
+            data.Status || "Active"
+        ],
+        (err, result) => {
+            if (err) {
+                return res.json({
+                    status: 0,
+                    message: "Insert failed",
+                    error: err
+                });
+            }
 
-        const insertQuery = `INSERT INTO tool_master 
-            (ToolName, ToolCode, CategoryName, MinStock, UOMName, Status) 
-            VALUES (?, ?, ?, ?, ?, ?)`;
-
-        db.mainDb(insertQuery, [
-            reqData.ToolName,
-            reqData.ToolCode,
-            reqData.CategoryName,
-            reqData.MinStock,
-            reqData.UOMName,
-            reqData.Status
-        ], (err, result) => {
-            //if (err) 
-            //     {
-            //     if (err.code === "ER_DUP_ENTRY") {
-            //         return res.json({ status: 0, message: "ToolCode already exists" });
-            //     }
-            //     return res.json({ status: 0, message: "DB error" });
-            // }
             return res.json({
                 status: 1,
                 message: "Tool created successfully",
                 SI: result.insertId
             });
+        }
+    );
+};
+
+
+/* ================= GET ALL TOOLS ================= */
+exports.getTools = (req, res) => {
+
+    const query = `SELECT * FROM tool_master ORDER BY SI ASC`;
+
+    db.mainDb(query, [], (err, result) => {
+        if (err) {
+            return res.json({
+                status: 0,
+                message: "Fetch failed"
+            });
+        }
+
+        return res.json({
+            status: 1,
+            data: result
         });
     });
 };
 
-// LIST TOOLS
-exports.getTools = (req, res) => {
-    db.mainDb(`SELECT * FROM tool_master ORDER BY SI ASC`, [], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
-        return res.json({ status: 1, data: result });
-    });
-};
 
-// GET TOOL
-exports.getTool = (req, res) => {
-    const SI = req.params.SI;
-
-    db.mainDb(`SELECT * FROM tool_master WHERE SI = ?`, [SI], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
-        if (result.length === 0) return res.json({ status: 0, message: "Tool not found" });
-
-        return res.json({ status: 1, data: result[0] });
-    });
-};
-
-// UPDATE TOOL
+/* ================= UPDATE TOOL ================= */
 exports.updateTool = (req, res) => {
-    const reqData = req.body;
+    const data = req.body;
 
-    console.log("UPDATE TOOL:", reqData);
-
-    const v = new Validator(reqData, {
-        SI: 'required|integer',
-        ToolName: 'required|string|maxLength:150',
-        ToolCode: 'required|string|maxLength:50',
-        CategoryName: 'required|string|maxLength:100',
-        MinStock: 'required|integer|min:0',
-        UOMName: 'required|string|maxLength:50',
-        Status: 'required|string|in:Active,Inactive'
-    });
-
-    v.check().then((matched) => {
-        if (!matched) {
-            const error_message = Object.values(v.errors)
-                .map(e => e.message)
-                .join(", ");
-            return res.json({ status: 0, message: error_message });
-        }
-
-        const updateQuery = `
-            UPDATE tool_master 
-            SET ToolName=?, ToolCode=?, CategoryName=?, MinStock=?, UOMName=?, Status=? 
-            WHERE SI=?`;
-
-        db.mainDb(
-            updateQuery,
-            [
-                reqData.ToolName,
-                reqData.ToolCode,
-                reqData.CategoryName,
-                reqData.MinStock,
-                reqData.UOMName,
-                reqData.Status,
-                reqData.SI
-            ],
-            (err, result) => {
-                if (err) {
-                    console.log(err);
-                    return res.json({ status: 0, message: "DB error" });
-                }
-
-                if (result.affectedRows === 0) {
-                    return res.json({ status: 0, message: "Tool not found" });
-                }
-
-                return res.json({
-                    status: 1,
-                    message: "Tool updated successfully"
-                });
-            }
-        );
-    });
-};
-
-// DELETE TOOL
-exports.deleteTool = (req, res) => {
-    const SI = req.body.SI;
-
-    if (!SI) {
-        return res.json({ status: 0, message: "SI is required" });
-    }
+    const query = `
+        UPDATE tool_master SET
+        ToolName = ?,
+        ToolCode = ?,
+        CategoryName = ?,
+        MinStock = ?,
+        UOMName = ?,
+        Status = ?
+        WHERE SI = ?
+    `;
 
     db.mainDb(
-        `DELETE FROM tool_master WHERE SI=?`,
-        [SI],
+        query,
+        [
+            data.ToolName || null,
+            data.ToolCode || null,
+            data.CategoryName || null,
+            data.MinStock || 0,
+            data.UOMName || null,
+            data.Status || "Active",
+            data.SI
+        ],
         (err, result) => {
             if (err) {
-                return res.json({ status: 0, message: "DB error" });
+                return res.json({
+                    status: 0,
+                    message: "Update failed",
+                    error: err
+                });
             }
 
             if (result.affectedRows === 0) {
-                return res.json({ status: 0, message: "Tool not found" });
+                return res.json({
+                    status: 0,
+                    message: "Tool not found"
+                });
             }
 
             return res.json({
                 status: 1,
-                message: "Tool deleted successfully"
+                message: "Tool updated successfully"
             });
         }
     );
+};
+
+
+/* ================= DELETE TOOL ================= */
+exports.deleteTool = (req, res) => {
+    const { SI } = req.body;
+
+    const query = `DELETE FROM tool_master WHERE SI = ?`;
+
+    db.mainDb(query, [SI], (err, result) => {
+        if (err) {
+            return res.json({
+                status: 0,
+                message: "Delete failed",
+                error: err
+            });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.json({
+                status: 0,
+                message: "Tool not found"
+            });
+        }
+
+        return res.json({
+            status: 1,
+            message: "Tool deleted successfully"
+        });
+    });
 };
 
 
