@@ -185,7 +185,7 @@ exports.createTool = (req, res) => {
             reqData.UOMName,
             reqData.Status
         ], (err, result) => {
-            if (err) 
+            //if (err) 
             //     {
             //     if (err.code === "ER_DUP_ENTRY") {
             //         return res.json({ status: 0, message: "ToolCode already exists" });
