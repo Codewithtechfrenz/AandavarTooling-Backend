@@ -144,7 +144,7 @@ router.get('/activeUOM', itemController.getActiveUOMs);
 // Get only active workers for dropdown
 //router.get("/dropworker", workerController.getActiveWorkers);
 
-router.get('/dropworkers', itemController.getActiveWorkers);
+router.get('/activeworker', itemController.getActiveWorkers);
 
 
 

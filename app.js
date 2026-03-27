@@ -114,7 +114,7 @@ app.use('/toolinward', toolInwardRouter);
 
 
 app.use('/activeitems', activeitemRouter);
-app.use('/getactiveworker', ActiveworkerRouter);
+app.use('/activeworkers', ActiveworkerRouter);
 app.use('/activemachines', ActiveMachineRouter);
 app.use('/activesalesproduct', ActivesalproRouter);
 

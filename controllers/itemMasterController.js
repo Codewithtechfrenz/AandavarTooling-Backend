@@ -1381,34 +1381,18 @@ exports.getActiveUOMs = (req, res) => {
 // Get active workers for dropdown
 exports.getActiveWorkers = (req, res) => {
     const query = `
-        SELECT WorkerName
-        FROM Worker_Master
+       SELECT WorkerName
+        FROM Worker_Master 
+        where WorkerName IS NOT NULL
         ORDER BY WorkerName ASC
     `;
 
     db.mainDb(query, [], (err, result) => {
-        if (err) {
-            console.error("Worker Fetch Error:", err);
-            return res.json({
-                status: 0,
-                message: "Database error while fetching workers"
-            });
-        }
+        if (err) return res.json({ status: 0, message: "DB error" });
 
-        if (!result || result.length === 0) {
-            return res.json({
-                status: 1,
-                data: []
-            });
-        }
-
-        // Convert to array of names
+        // Return only array of worker names
         const workers = result.map(row => row.WorkerName);
-
-        return res.json({
-            status: 1,
-            data: workers
-        });
+        return res.json({ status: 1, data: workers });
     });
 };
  
