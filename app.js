@@ -46,6 +46,7 @@ var dashRouter = require('./routes/itemRoutes');
 
 var toolInwardRouter = require('./routes/itemRoutes');
 var activetoolRouter = require('./routes/itemRoutes')
+var actiCustomerRouter = require('./routes/itemRoutes');
 
 var custdropRouter = require('./routes/itemRoutes')
 
@@ -98,7 +99,7 @@ app.use('/customers', CustomerRouter);
 app.use('/sales', SalesProRouter);
 app.use('/machines', MachineProRouter);
 
-
+app.use('/acticustomers', actiCustomerRouter);
 app.use('/currentstock', CurrentStockRouter);
 app.use('/inward', InwardRouter);
 app.use('/linefeedouts', LineFeedOutRouter);
