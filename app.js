@@ -19,7 +19,7 @@ var WorkerRouter = require('./routes/itemRoutes');
 var CustomerRouter = require('./routes/itemRoutes');
 var SalesProRouter = require('./routes/itemRoutes');
 var MachineProRouter = require('./routes/itemRoutes');
-var toolRouter = require('./routes/itemRoutes')
+var toolRouter = require('./routes/itemRoutes');
 
 
 
@@ -45,14 +45,14 @@ var ActivesalproRouter = require('./routes/itemRoutes');
 var dashRouter = require('./routes/itemRoutes');
 
 var toolInwardRouter = require('./routes/itemRoutes');
-var activetoolRouter = require('./routes/itemRoutes')
-var actiCustomerRouter = require('./routes/itemRoutes');
+var activetoolRouter = require('./routes/itemRoutes');
 
-var custdropRouter = require('./routes/itemRoutes')
 
-var deliveryRouter = require('./routes/itemRoutes')
+var custdropRouter = require('./routes/itemRoutes');
 
-var returndeliveryRouter = require('./routes/itemRoutes')
+var deliveryRouter = require('./routes/itemRoutes');
+
+var returndeliveryRouter = require('./routes/itemRoutes');
 
 
 var ToolStockRouter = require('./routes/itemRoutes');
@@ -99,7 +99,7 @@ app.use('/customers', CustomerRouter);
 app.use('/sales', SalesProRouter);
 app.use('/machines', MachineProRouter);
 
-app.use('/acticustomers', actiCustomerRouter);
+
 app.use('/currentstock', CurrentStockRouter);
 app.use('/inward', InwardRouter);
 app.use('/linefeedouts', LineFeedOutRouter);

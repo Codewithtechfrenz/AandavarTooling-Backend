@@ -1382,12 +1382,7 @@ exports.getActiveUOMs = (req, res) => {
 exports.getActiveWorkers = (req, res) => {
     const query = `
        SELECT WorkerName
-        FROM W
-        
-        
-        
-        
-        orker_Master 
+        FROM Worker_Master 
         where WorkerName IS NOT NULL
         ORDER BY WorkerName ASC
     `;
