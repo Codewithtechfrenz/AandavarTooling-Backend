@@ -1406,7 +1406,7 @@ exports.getActiveWorkers = (req, res) => {
 
 
 // Get customer for dropdown
-exports.getdropCustomers = (req, res) => {
+exports.getdropCustomer = (req, res) => {
     const query = `
         SELECT DISTINCT Cus_Name
         FROM Customer_Master
@@ -1423,7 +1423,7 @@ exports.getdropCustomers = (req, res) => {
             });
         }
 
-        const customers = result.map(row => row.cus_name);
+        const customers = result.map(row => row.Cus_Name);
 
         return res.json({
             status: 1,

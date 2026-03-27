@@ -78,7 +78,7 @@ router.post('/deleteCustomer', itemController.deleteCustomer); // POST with body
 
 //Customer dropdown
 
-router.get('/getdropCustomers', itemController.getdropCustomers);
+router.get('/getdropCustomers', itemController.getdropCustomer);
 
 
 
