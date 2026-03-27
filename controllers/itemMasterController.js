@@ -1382,7 +1382,12 @@ exports.getActiveUOMs = (req, res) => {
 exports.getActiveWorkers = (req, res) => {
     const query = `
        SELECT WorkerName
-        FROM Worker_Master 
+        FROM W
+        
+        
+        
+        
+        orker_Master 
         where WorkerName IS NOT NULL
         ORDER BY WorkerName ASC
     `;
@@ -1520,7 +1525,7 @@ exports.getDashboardData = (req, res) => {
         SELECT
             (SELECT COUNT(*) FROM sales_product_master) AS total_products,
             (SELECT COUNT(*) FROM machine_master) AS total_machines,
-            (SELECT COUNT(*) FROM worker_master) AS total_workers,
+            (SELECT COUNT(*) FROM Worker_Master) AS total_workers,
             (SELECT IFNULL(SUM(AvailableQty),0) FROM Current_Stock) AS total_stock_quantity
     `;
 
