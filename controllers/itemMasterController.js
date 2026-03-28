@@ -2228,3 +2228,25 @@ function reduceToolStock(name, qty) {
     });
   });
 }
+
+
+
+
+
+
+
+exports.getItemCodes = (req, res) => {
+    const query = `
+        SELECT ItemCode
+        FROM item_master
+        ORDER BY ItemCode ASC
+    `;
+
+    db.mainDb(query, [], (err, result) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+
+        // Return only array of item codes
+        const items = result.map(row => row.ItemCode);
+        return res.json({ status: 1, data: items });
+    });
+};

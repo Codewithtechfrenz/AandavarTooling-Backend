@@ -29,6 +29,10 @@ router.get('/getToolStock', itemController.getToolCurrentStock);
 router.get('/getCurrentStocks', itemController.getCurrentStock);
 
 
+//get item code dropdown
+router.get('/getItemCode', itemController.getItemCodes);
+
+
 
 
 
