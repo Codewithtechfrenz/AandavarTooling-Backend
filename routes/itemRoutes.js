@@ -26,7 +26,7 @@ router.get('/getToolStock', itemController.getToolCurrentStock);
 
 
 //currentstock
-router.get('/getCurrentStock', itemController.getCurrentStock);
+router.get('/getCurrentStocks', itemController.getCurrentStock);
 
 
 

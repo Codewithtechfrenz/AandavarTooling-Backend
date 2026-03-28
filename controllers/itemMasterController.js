@@ -1229,42 +1229,198 @@ exports.createLineFeedOut = (req, res) => {
 };
 
 
-
+//-----------------------------------------------------------------------------------------------
 
 
 
 // Get Current Stock
-exports.getCurrentStock = (req, res) => {
+// exports.getCurrentStock = (req, res) => {
+//     const query = `
+//         SELECT * 
+//         FROM current_stock
+//         ORDER BY ItemName ASC
+//     `;
 
+//     db.mainDb(query, [], (err, result) => {
+//         if (err) return res.json({ status: 0, message: "DB error", error: err });
+//         res.json({ status: 1, data: result });
+//     });
+// };
+
+
+// Update or insert stock
+// function updateItemStock(ItemName, UOMName, qtyChange) {
+//     return new Promise((resolve, reject) => {
+
+//         const checkQuery = `
+//             SELECT StockID, AvailableQty
+//             FROM current_stock
+//             WHERE ItemName = ? AND UOMName = ?
+//         `;
+
+//         db.mainDb(checkQuery, [ItemName, UOMName], (err, result) => {
+//             if (err) return reject(err);
+
+//             if (result.length > 0) {
+//                 // Update existing stock
+//                 const updateQuery = `
+//                     UPDATE current_stock
+//                     SET AvailableQty = AvailableQty + ?, LastUpdated = NOW()
+//                     WHERE StockID = ?
+//                 `;
+
+//                 db.mainDb(updateQuery, [qtyChange, result[0].StockID], (err2) => {
+//                     if (err2) return reject(err2);
+//                     resolve();
+//                 });
+
+//             } else {
+//                 // Insert new stock row
+//                 const insertQuery = `
+//                     INSERT INTO current_stock (ItemName, UOMName, AvailableQty, LastUpdated)
+//                     VALUES (?, ?, ?, NOW())
+//                 `;
+
+//                 db.mainDb(insertQuery, [ItemName, UOMName, qtyChange], (err2) => {
+//                     if (err2) return reject(err2);
+//                     resolve();
+//                 });
+//             }
+//         });
+//     });
+// }
+
+
+// Inward Entry API
+// exports.itemInward = async (req, res) => {
+//     try {
+//         const { ItemID, ItemName, UOMName, Quantity, Rate, Status } = req.body;
+
+//         const insertQuery = `
+//             INSERT INTO item_inward (ItemID, ItemName, UOMName, Quantity, Rate, Status)
+//             VALUES (?, ?, ?, ?, ?, ?)
+//         `;
+
+//         db.mainDb(
+//             insertQuery,
+//             [ItemID, ItemName, UOMName, Quantity, Rate, Status],
+//             async (err) => {
+//                 if (err) {
+//                     return res.json({ status: 0, message: "Insert error", error: err });
+//                 }
+
+//                 await updateItemStock(ItemID, UOMName, Quantity);
+
+//                 res.json({
+//                     status: 1,
+//                     message: "Stock updated successfully"
+//                 });
+//             }
+//         );
+
+//     } catch (error) {
+//         res.json({ status: 0, message: "Server error" });
+//     }
+
+//     };
+
+
+//------------------------------------------------------------------------------
+
+
+
+exports.getCurrentStock = (req, res) => {
     const query = `
-        SELECT 
-            StockID,
-            ItemName,
-            UOMName,
-            AvailableQty,
-            LastUpdated
+        SELECT *
         FROM current_stock
-        ORDER BY StockID DESC
+        ORDER BY ItemName ASC
     `;
 
     db.mainDb(query, [], (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.json({ status: 0, message: "DB Error" });
-        }
-
-        res.json({
-            status: 1,
-            data: result
-        });
+        if (err) return res.json({ status: 0, message: "DB error", error: err });
+        res.json({ status: 1, data: result });
     });
 };
 
 
 
+// ================= STOCK UPDATE FUNCTION =================
+// ADD YOUR FUNCTION HERE
+function updateItemStock(ItemID, UOMName, qtyChange) {
+    return new Promise((resolve, reject) => {
+
+        const checkQuery = `
+            SELECT StockID, AvailableQty
+            FROM current_stock
+            WHERE ItemID = ? AND UOMName = ?
+        `;
+
+        db.mainDb(checkQuery, [ItemID, UOMName], (err, result) => {
+            if (err) return reject(err);
+
+            if (result.length > 0) {
+
+                const updateQuery = `
+                    UPDATE current_stock
+                    SET AvailableQty = AvailableQty + ?, LastUpdated = NOW()
+                    WHERE StockID = ?
+                `;
+
+                db.mainDb(updateQuery, [qtyChange, result[0].StockID], (err2) => {
+                    if (err2) return reject(err2);
+                    resolve();
+                });
+
+            } else {
+
+                const insertQuery = `
+                    INSERT INTO current_stock (ItemID, UOMName, AvailableQty, LastUpdated)
+                    VALUES (?, ?, ?, NOW())
+                `;
+
+                db.mainDb(insertQuery, [ItemID, UOMName, qtyChange], (err2) => {
+                    if (err2) return reject(err2);
+                    resolve();
+                });
+            }
+        });
+    });
+}
 
 
 
+// ================= INWARD API =================
+exports.itemInward = async (req, res) => {
+    try {
+        const { ItemID, ItemName, UOMName, Quantity, Rate, Status } = req.body;
+
+        const insertQuery = `
+            INSERT INTO item_inward (ItemID, ItemName, UOMName, Quantity, Rate, Status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        db.mainDb(
+            insertQuery,
+            [ItemID, ItemName, UOMName, Quantity, Rate, Status],
+            async (err) => {
+                if (err) {
+                    return res.json({ status: 0, message: "Insert error", error: err });
+                }
+
+                // IMPORTANT: This is where stock gets updated
+                await updateItemStock(ItemID, UOMName, Quantity);
+
+                res.json({
+                    status: 1,
+                    message: "Inward saved and stock updated successfully"
+                });
+            }
+        );
+
+    } catch (error) {
+        res.json({ status: 0, message: "Server error" });
+    }
+};
 
 
 
