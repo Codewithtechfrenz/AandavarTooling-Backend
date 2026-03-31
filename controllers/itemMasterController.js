@@ -2337,19 +2337,18 @@ exports.getSales = (req, res) => {
 
 const query = `
 SELECT
-Sale_ID,
-Invoice_No,
-Customer_Name,
-Product_Name,
-Quantity,
-Price,
-SGST,
-CGST,
-Sub_Total,
-GST_Total,
-Total_Amount,
-CreatedDate,
-UpdatedDate
+Sale_ID as id,
+Customer_Name as customer,
+Product_Name as productName,
+Quantity as quantity,
+Price as price,
+SGST as sgst,
+CGST as cgst,
+Sub_Total as subTotal,
+GST_Total as gstAmount,
+Total_Amount as totalAmount,
+DATE_FORMAT(CreatedDate,'%d-%m-%Y') as created,
+DATE_FORMAT(UpdatedDate,'%d-%m-%Y') as updated
 FROM sales_master
 ORDER BY Sale_ID DESC
 `;
@@ -2368,7 +2367,6 @@ return res.json({
 status: 1,
 data: result
 });
-
 });
 };
 
@@ -2454,3 +2452,5 @@ message: "Sale Updated Successfully"
 );
 
 };
+
+
