@@ -857,54 +857,54 @@ exports.createSalesProduct = (req, res) => {
 };
 
 // List Sales Products
-exports.getSalesProducts = (req, res) => {
-    db.mainDb(`SELECT * FROM Sales_Product_Master ORDER BY S_No DESC`, [], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
-        return res.json({ status: 1, data: result });
-    });
-};
+// exports.getSalesProducts = (req, res) => {
+//     db.mainDb(`SELECT * FROM Sales_Product_Master ORDER BY S_No DESC`, [], (err, result) => {
+//         if (err) return res.json({ status: 0, message: "DB error" });
+//         return res.json({ status: 1, data: result });
+//     });
+// };
 
-// Get single Sales Product
-exports.getSalesProduct = (req, res) => {
-    const S_No = req.body.S_No;
-    db.mainDb(`SELECT * FROM Sales_Product_Master WHERE S_No = ?`, [S_No], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
-        if (result.length === 0) return res.json({ status: 0, message: "Product not found" });
-        return res.json({ status: 1, data: result[0] });
-    });
-};
+// // Get single Sales Product
+// exports.getSalesProduct = (req, res) => {
+//     const S_No = req.body.S_No;
+//     db.mainDb(`SELECT * FROM Sales_Product_Master WHERE S_No = ?`, [S_No], (err, result) => {
+//         if (err) return res.json({ status: 0, message: "DB error" });
+//         if (result.length === 0) return res.json({ status: 0, message: "Product not found" });
+//         return res.json({ status: 1, data: result[0] });
+//     });
+// };
 
 // Update Sales Product
-exports.updateSalesProduct = (req, res) => {
-    const S_No = req.body.S_No;
-    const reqData = req.body;
-    const v = new Validator(reqData, {
-        Product_Name: 'required|string|maxLength:150'
-    });
+// exports.updateSalesProduct = (req, res) => {
+//     const S_No = req.body.S_No;
+//     const reqData = req.body;
+//     const v = new Validator(reqData, {
+//         Product_Name: 'required|string|maxLength:150'
+//     });
 
-    v.check().then((matched) => {
-        if (!matched) {
-            const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-            return res.json({ status: 0, message: error_message });
-        }
+//     v.check().then((matched) => {
+//         if (!matched) {
+//             const error_message = Object.values(v.errors).map(e => e.message).join(", ");
+//             return res.json({ status: 0, message: error_message });
+//         }
 
-        db.mainDb(`UPDATE Sales_Product_Master SET Product_Name=? WHERE S_No=?`,
-            [reqData.Product_Name, S_No],
-            (err, result) => {
-                if (err) return res.json({ status: 0, message: "DB error" });
-                return res.json({ status: 1, message: "Sales product updated successfully" });
-            });
-    });
-};
+//         db.mainDb(`UPDATE Sales_Product_Master SET Product_Name=? WHERE S_No=?`,
+//             [reqData.Product_Name, S_No],
+//             (err, result) => {
+//                 if (err) return res.json({ status: 0, message: "DB error" });
+//                 return res.json({ status: 1, message: "Sales product updated successfully" });
+//             });
+//     });
+// };
 
-// Delete Sales Product
-exports.deleteSalesProduct = (req, res) => {
-    const S_No = req.body.S_No;
-    db.mainDb(`DELETE FROM Sales_Product_Master WHERE S_No=?`, [S_No], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
-        return res.json({ status: 1, message: "Sales product deleted successfully" });
-    });
-};
+// // Delete Sales Product
+// exports.deleteSalesProduct = (req, res) => {
+//     const S_No = req.body.S_No;
+//     db.mainDb(`DELETE FROM Sales_Product_Master WHERE S_No=?`, [S_No], (err, result) => {
+//         if (err) return res.json({ status: 0, message: "DB error" });
+//         return res.json({ status: 1, message: "Sales product deleted successfully" });
+//     });
+// };
 
 
 //------------------------------------------------------------------------------------
