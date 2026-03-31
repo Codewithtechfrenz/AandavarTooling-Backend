@@ -33,7 +33,11 @@ router.get('/getCurrentStocks', itemController.getCurrentStock);
 router.get('/getItemCode', itemController.getItemCodes);
 
 
-
+/* SALES */
+router.post("/addsales", itemController.addSale);
+router.get("/getSales", itemController.getSales);
+router.delete("/deleteSales/:id", itemController.deleteSale);
+router.put("/updateSales", itemController.updateSale);
 
 
 

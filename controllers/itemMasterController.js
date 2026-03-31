@@ -2250,3 +2250,207 @@ exports.getItemCodes = (req, res) => {
         return res.json({ status: 1, data: items });
     });
 };
+
+
+
+
+
+exports.addSale = (req, res) => {
+
+const reqData = req.body;
+
+const totalAmount = parseFloat(reqData.total) || 0;
+const gstTotal = parseFloat(reqData.gst_total) || 0;
+
+const invoiceNo = "INV-" + Date.now();
+
+const insertQuery = `
+INSERT INTO sales_master
+(
+Invoice_No,
+Invoice_Date,
+Customer_Name,
+Product_Name,
+Quantity,
+Price,
+SGST,
+CGST,
+Sub_Total,
+GST_Total,
+Total_Amount,
+Bank_Name,
+Bank_Account,
+Bank_IFSC,
+Paid_Amount,
+Balance_Amount,
+Payment_Status
+)
+VALUES (?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
+
+db.mainDb(
+insertQuery,
+[
+invoiceNo,
+reqData.customer_name,
+reqData.product_name,
+reqData.quantity,
+reqData.price,
+reqData.sgst,
+reqData.cgst,
+reqData.subtotal,
+gstTotal,
+totalAmount,
+"BANK OF BARODA",
+"75220200001446",
+"BARBOVJMAAN",
+0,
+totalAmount,
+"Pending"
+],
+(err, result) => {
+
+if (err) {
+console.log(err);
+return res.json({
+status: 0,
+message: "DB Error"
+});
+}
+
+return res.json({
+status: 1,
+message: "Sales Created Successfully",
+Sale_ID: result.insertId,
+Invoice_No: invoiceNo
+});
+
+}
+);
+
+};
+
+
+/* ================= GET SALES ================= */
+
+exports.getSales = (req, res) => {
+
+const query = `
+SELECT
+Sale_ID,
+Invoice_No,
+Customer_Name,
+Product_Name,
+Quantity,
+Price,
+SGST,
+CGST,
+Sub_Total,
+GST_Total,
+Total_Amount,
+CreatedDate,
+UpdatedDate
+FROM sales_master
+ORDER BY Sale_ID DESC
+`;
+
+db.mainDb(query, [], (err, result) => {
+
+if (err) {
+console.log(err);
+return res.json({
+status: 0,
+message: "DB Error"
+});
+}
+
+return res.json({
+status: 1,
+data: result
+});
+
+});
+};
+
+
+/* ================= DELETE SALE ================= */
+
+exports.deleteSale = (req, res) => {
+
+const id = req.params.id;
+
+const query = `DELETE FROM sales_master WHERE Sale_ID=?`;
+
+db.mainDb(query, [id], (err) => {
+
+if (err) {
+console.log(err);
+return res.json({
+status: 0,
+message: "DB Error"
+});
+}
+
+return res.json({
+status: 1,
+message: "Sale Deleted Successfully"
+});
+
+});
+
+};
+
+
+/* ================= UPDATE SALE ================= */
+
+exports.updateSale = (req, res) => {
+
+const reqData = req.body;
+
+const updateQuery = `
+UPDATE sales_master
+SET
+Customer_Name=?,
+Product_Name=?,
+Quantity=?,
+Price=?,
+SGST=?,
+CGST=?,
+Sub_Total=?,
+GST_Total=?,
+Total_Amount=?
+WHERE Sale_ID=?
+`;
+
+db.mainDb(
+updateQuery,
+[
+reqData.customer_name,
+reqData.product_name,
+reqData.quantity,
+reqData.price,
+reqData.sgst,
+reqData.cgst,
+reqData.subtotal,
+reqData.gst_total,
+reqData.total,
+reqData.Sale_ID
+],
+(err) => {
+
+if (err) {
+console.log(err);
+return res.json({
+status: 0,
+message: "DB Error"
+});
+}
+
+return res.json({
+status: 1,
+message: "Sale Updated Successfully"
+});
+}
+);
+
+};
