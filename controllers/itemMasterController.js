@@ -2257,14 +2257,9 @@ exports.getItemCodes = (req, res) => {
 
 exports.addSale = (req, res) => {
 
-const reqData = req.body;
+const data = req.body;
 
-const totalAmount = parseFloat(reqData.total) || 0;
-const gstTotal = parseFloat(reqData.gst_total) || 0;
-
-const invoiceNo = "INV-" + Date.now();
-
-const insertQuery = `
+const query = `
 INSERT INTO sales_master
 (
 Invoice_No,
@@ -2277,59 +2272,41 @@ SGST,
 CGST,
 Sub_Total,
 GST_Total,
-Total_Amount,
-Bank_Name,
-Bank_Account,
-Bank_IFSC,
-Paid_Amount,
-Balance_Amount,
-Payment_Status
+Total_Amount
 )
-VALUES (?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 db.mainDb(
-insertQuery,
+query,
 [
-invoiceNo,
-reqData.customer_name,
-reqData.product_name,
-reqData.quantity,
-reqData.price,
-reqData.sgst,
-reqData.cgst,
-reqData.subtotal,
-gstTotal,
-totalAmount,
-"BANK OF BARODA",
-"75220200001446",
-"BARBOVJMAAN",
-0,
-totalAmount,
-"Pending"
+data.Invoice_No,
+data.Invoice_Date,
+data.Customer_Name,
+data.Product_Name,
+data.Quantity,
+data.Price,
+data.SGST,
+data.CGST,
+data.Sub_Total,
+data.GST_Total,
+data.Total_Amount
 ],
 (err, result) => {
 
 if (err) {
 console.log(err);
-return res.json({
-status: 0,
-message: "DB Error"
-});
+return res.json({ status: 0, message: "DB Error" });
 }
 
-return res.json({
+res.json({
 status: 1,
-message: "Sales Created Successfully",
-Sale_ID: result.insertId,
-Invoice_No: invoiceNo
+message: "Sale Added",
+Sale_ID: result.insertId
 });
 
-}
-);
-
+});
 };
-
 
 /* ================= GET SALES ================= */
 
@@ -2337,18 +2314,15 @@ exports.getSales = (req, res) => {
 
 const query = `
 SELECT
-Sale_ID as id,
-Customer_Name as customer,
-Product_Name as productName,
-Quantity as quantity,
-Price as price,
-SGST as sgst,
-CGST as cgst,
-Sub_Total as subTotal,
-GST_Total as gstAmount,
-Total_Amount as totalAmount,
-DATE_FORMAT(CreatedDate,'%d-%m-%Y') as created,
-DATE_FORMAT(UpdatedDate,'%d-%m-%Y') as updated
+Sale_ID,
+Invoice_No,
+DATE_FORMAT(Invoice_Date,'%Y-%m-%d') as Invoice_Date,
+Customer_Name,
+Product_Name,
+Quantity,
+Price,
+GST_Total,
+Total_Amount
 FROM sales_master
 ORDER BY Sale_ID DESC
 `;
@@ -2357,19 +2331,16 @@ db.mainDb(query, [], (err, result) => {
 
 if (err) {
 console.log(err);
-return res.json({
-status: 0,
-message: "DB Error"
-});
+return res.json({ status: 0 });
 }
 
-return res.json({
+res.json({
 status: 1,
 data: result
 });
+
 });
 };
-
 
 /* ================= DELETE SALE ================= */
 
@@ -2452,5 +2423,4 @@ message: "Sale Updated Successfully"
 );
 
 };
-
 
