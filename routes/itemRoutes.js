@@ -34,11 +34,15 @@ router.get('/getItemCode', itemController.getItemCodes);
 
 
 /* SALES */
-router.post("/addsales", itemController.addSale);
-router.get("/getSale", itemController.getSales);
-router.post("/deleteSales/:id", itemController.deleteSale);
-router.post("/updateSales", itemController.updateSale);
 
+
+router.post("/addsales", itemController.addSale);
+
+router.get("/getSales", itemController.getSales);
+
+router.post("/deleteSales/:id", itemController.deleteSale);
+
+router.post("/updateSales", itemController.updateSale);
 
 
 

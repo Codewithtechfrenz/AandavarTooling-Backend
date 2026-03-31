@@ -17,7 +17,7 @@ var stockRouter = require('./routes/itemRoutes');
 var CategoryRouter = require('./routes/itemRoutes');
 var WorkerRouter = require('./routes/itemRoutes');
 var CustomerRouter = require('./routes/itemRoutes');
-var SalesProRouter = require('./routes/itemRoutes');
+var SalesRouter = require('./routes/itemRoutes');
 var MachineProRouter = require('./routes/itemRoutes');
 var toolRouter = require('./routes/itemRoutes');
 
@@ -47,7 +47,7 @@ var dashRouter = require('./routes/itemRoutes');
 var toolInwardRouter = require('./routes/itemRoutes');
 var activetoolRouter = require('./routes/itemRoutes');
 
-var invoiceRouter = require('./routes/itemRoutes');
+//var invoiceRouter = require('./routes/itemRoutes');
 var custdropRouter = require('./routes/itemRoutes');
 
 var deliveryRouter = require('./routes/itemRoutes');
@@ -96,9 +96,9 @@ app.use('/stock', stockRouter);
 app.use('/categories', CategoryRouter);
 app.use('/workers', WorkerRouter);
 app.use('/customers', CustomerRouter);
-app.use('/sales', SalesProRouter);
+app.use('/sales', SalesRouter);
 app.use('/machines', MachineProRouter);
-app.use('/invoice', invoiceRouter);
+//app.use('/invoice', invoiceRouter);
 
 app.use('/currentstock', CurrentStockRouter);
 app.use('/inward', InwardRouter);

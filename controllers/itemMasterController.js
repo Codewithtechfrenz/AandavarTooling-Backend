@@ -2256,171 +2256,153 @@ exports.getItemCodes = (req, res) => {
 
 
 exports.addSale = (req, res) => {
+  const data = req.body;
 
-const data = req.body;
+  const query = `
+    INSERT INTO sales_master
+    (
+      Invoice_No,
+      Invoice_Date,
+      Customer_Name,
+      Product_Name,
+      Quantity,
+      Price,
+      SGST,
+      CGST,
+      Sub_Total,
+      GST_Total,
+      Total_Amount
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
-const query = `
-INSERT INTO sales_master
-(
-Invoice_No,
-Invoice_Date,
-Customer_Name,
-Product_Name,
-Quantity,
-Price,
-SGST,
-CGST,
-Sub_Total,
-GST_Total,
-Total_Amount
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`;
+  db.mainDb(
+    query,
+    [
+      data.Invoice_No,
+      data.Invoice_Date,
+      data.Customer_Name,
+      data.Product_Name,
+      data.Quantity,
+      data.Price,
+      data.SGST,
+      data.CGST,
+      data.Sub_Total,
+      data.GST_Total,
+      data.Total_Amount
+    ],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        return res.json({ status: 0, message: "DB Error" });
+      }
 
-db.mainDb(
-query,
-[
-data.Invoice_No,
-data.Invoice_Date,
-data.Customer_Name,
-data.Product_Name,
-data.Quantity,
-data.Price,
-data.SGST,
-data.CGST,
-data.Sub_Total,
-data.GST_Total,
-data.Total_Amount
-],
-(err, result) => {
-
-if (err) {
-console.log(err);
-return res.json({ status: 0, message: "DB Error" });
-}
-
-res.json({
-status: 1,
-message: "Sale Added",
-Sale_ID: result.insertId
-});
-
-});
+      res.json({
+        status: 1,
+        message: "Sale Added",
+        Sale_ID: result.insertId
+      });
+    }
+  );
 };
 
-/* ================= GET SALES ================= */
+/* GET SALES */
 
 exports.getSales = (req, res) => {
+  const query = `
+    SELECT *
+    FROM sales_master
+    ORDER BY Sale_ID DESC
+  `;
 
-const query = `
-SELECT
-Sale_ID,
-Invoice_No,
-DATE_FORMAT(Invoice_Date,'%Y-%m-%d') as Invoice_Date,
-Customer_Name,
-Product_Name,
-Quantity,
-Price,
-GST_Total,
-Total_Amount
-FROM sales_master
-ORDER BY Sale_ID DESC
-`;
+  db.mainDb(query, [], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.json({ status: 0 });
+    }
 
-db.mainDb(query, [], (err, result) => {
-
-if (err) {
-console.log(err);
-return res.json({ status: 0 });
-}
-
-res.json({
-status: 1,
-data: result
-});
-
-});
+    res.json({
+      status: 1,
+      data: result
+    });
+  });
 };
 
-/* ================= DELETE SALE ================= */
+/* DELETE SALE */
 
 exports.deleteSale = (req, res) => {
+  const id = req.params.id;
 
-const id = req.params.id;
+  const query = `DELETE FROM sales_master WHERE Sale_ID=?`;
 
-const query = `DELETE FROM sales_master WHERE Sale_ID=?`;
+  db.mainDb(query, [id], (err) => {
+    if (err) {
+      console.log(err);
+      return res.json({
+        status: 0,
+        message: "DB Error"
+      });
+    }
 
-db.mainDb(query, [id], (err) => {
-
-if (err) {
-console.log(err);
-return res.json({
-status: 0,
-message: "DB Error"
-});
-}
-
-return res.json({
-status: 1,
-message: "Sale Deleted Successfully"
-});
-
-});
-
+    return res.json({
+      status: 1,
+      message: "Sale Deleted Successfully"
+    });
+  });
 };
 
-
-/* ================= UPDATE SALE ================= */
+/* UPDATE SALE */
 
 exports.updateSale = (req, res) => {
+  const data = req.body;
 
-const reqData = req.body;
+  const updateQuery = `
+    UPDATE sales_master
+    SET
+      Invoice_No=?,
+      Invoice_Date=?,
+      Customer_Name=?,
+      Product_Name=?,
+      Quantity=?,
+      Price=?,
+      SGST=?,
+      CGST=?,
+      Sub_Total=?,
+      GST_Total=?,
+      Total_Amount=?
+    WHERE Sale_ID=?
+  `;
 
-const updateQuery = `
-UPDATE sales_master
-SET
-Customer_Name=?,
-Product_Name=?,
-Quantity=?,
-Price=?,
-SGST=?,
-CGST=?,
-Sub_Total=?,
-GST_Total=?,
-Total_Amount=?
-WHERE Sale_ID=?
-`;
+  db.mainDb(
+    updateQuery,
+    [
+      data.Invoice_No,
+      data.Invoice_Date,
+      data.Customer_Name,
+      data.Product_Name,
+      data.Quantity,
+      data.Price,
+      data.SGST,
+      data.CGST,
+      data.Sub_Total,
+      data.GST_Total,
+      data.Total_Amount,
+      data.Sale_ID
+    ],
+    (err) => {
+      if (err) {
+        console.log(err);
+        return res.json({
+          status: 0,
+          message: "DB Error"
+        });
+      }
 
-db.mainDb(
-updateQuery,
-[
-reqData.customer_name,
-reqData.product_name,
-reqData.quantity,
-reqData.price,
-reqData.sgst,
-reqData.cgst,
-reqData.subtotal,
-reqData.gst_total,
-reqData.total,
-reqData.Sale_ID
-],
-(err) => {
-
-if (err) {
-console.log(err);
-return res.json({
-status: 0,
-message: "DB Error"
-});
-}
-
-return res.json({
-status: 1,
-message: "Sale Updated Successfully"
-});
-}
-);
-
+      return res.json({
+        status: 1,
+        message: "Sale Updated Successfully"
+      });
+    }
+  );
 };
 
