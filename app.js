@@ -117,7 +117,7 @@ app.use('/toolinward', toolInwardRouter);
 app.use('/activeitems', activeitemRouter);
 app.use('/activeworkers', ActiveworkerRouter);
 app.use('/activemachines', ActiveMachineRouter);
-app.use('/activesalesproduct', ActivesalproRouter);
+
 
 app.use('/activetools', activetoolRouter);
 app.use('/dashboard', dashRouter);

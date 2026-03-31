@@ -2256,153 +2256,272 @@ exports.getItemCodes = (req, res) => {
 
 
 exports.addSale = (req, res) => {
-  const data = req.body;
+    const reqData = req.body;
 
-  const query = `
-    INSERT INTO sales_master
-    (
-      Invoice_No,
-      Invoice_Date,
-      Customer_Name,
-      Product_Name,
-      Quantity,
-      Price,
-      SGST,
-      CGST,
-      Sub_Total,
-      GST_Total,
-      Total_Amount
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+    const v = new Validator(reqData, {
+        Invoice_No: 'required|string|maxLength:50',
+        Invoice_Date: 'required|date',
+        Customer_Name: 'required|string|maxLength:150',
+        Product_Name: 'required|string|maxLength:150',
+        Quantity: 'required|integer|min:1',
+        Price: 'required|numeric|min:0',
+        SGST: 'required|numeric|min:0',
+        CGST: 'required|numeric|min:0',
+        Sub_Total: 'required|numeric|min:0',
+        GST_Total: 'required|numeric|min:0',
+        Total_Amount: 'required|numeric|min:0'
+    });
 
-  db.mainDb(
-    query,
-    [
-      data.Invoice_No,
-      data.Invoice_Date,
-      data.Customer_Name,
-      data.Product_Name,
-      data.Quantity,
-      data.Price,
-      data.SGST,
-      data.CGST,
-      data.Sub_Total,
-      data.GST_Total,
-      data.Total_Amount
-    ],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        return res.json({ status: 0, message: "DB Error" });
-      }
+    v.check().then((matched) => {
 
-      res.json({
-        status: 1,
-        message: "Sale Added",
-        Sale_ID: result.insertId
-      });
-    }
-  );
+        if (!matched) {
+            const error_message = Object.values(v.errors)
+                .map(e => e.message)
+                .join(", ");
+            return res.json({ status: 0, message: error_message });
+        }
+
+        const insertQuery = `
+            INSERT INTO sales_master
+            (
+                Invoice_No,
+                Invoice_Date,
+                Customer_Name,
+                Product_Name,
+                Quantity,
+                Price,
+                SGST,
+                CGST,
+                Sub_Total,
+                GST_Total,
+                Total_Amount
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        db.mainDb(insertQuery, [
+            reqData.Invoice_No,
+            reqData.Invoice_Date,
+            reqData.Customer_Name,
+            reqData.Product_Name,
+            reqData.Quantity,
+            reqData.Price,
+            reqData.SGST,
+            reqData.CGST,
+            reqData.Sub_Total,
+            reqData.GST_Total,
+            reqData.Total_Amount
+        ], (err, result) => {
+
+            if (err) {
+                console.log(err);
+
+                if (err.code === "ER_DUP_ENTRY") {
+                    return res.json({
+                        status: 0,
+                        message: "Invoice already exists"
+                    });
+                }
+
+                return res.json({
+                    status: 0,
+                    message: "DB Error"
+                });
+            }
+
+            return res.json({
+                status: 1,
+                message: "Sale created successfully",
+                Sale_ID: result.insertId
+            });
+
+        });
+
+    });
 };
 
-/* GET SALES */
+
+/* ================= LIST SALES ================= */
 
 exports.getSales = (req, res) => {
-  const query = `
-    SELECT *
-    FROM sales_master
-    ORDER BY Sale_ID DESC
-  `;
 
-  db.mainDb(query, [], (err, result) => {
-    if (err) {
-      console.log(err);
-      return res.json({ status: 0 });
-    }
+    db.mainDb(
+        `SELECT * FROM sales_master ORDER BY Sale_ID DESC`,
+        [],
+        (err, result) => {
 
-    res.json({
-      status: 1,
-      data: result
-    });
-  });
+            if (err) {
+                return res.json({ status: 0, message: "DB Error" });
+            }
+
+            return res.json({
+                status: 1,
+                data: result
+            });
+
+        }
+    );
 };
 
-/* DELETE SALE */
 
-exports.deleteSale = (req, res) => {
-  const id = req.params.id;
+/* ================= GET SINGLE SALE ================= */
 
-  const query = `DELETE FROM sales_master WHERE Sale_ID=?`;
+exports.getSale = (req, res) => {
 
-  db.mainDb(query, [id], (err) => {
-    if (err) {
-      console.log(err);
-      return res.json({
-        status: 0,
-        message: "DB Error"
-      });
-    }
+    const Sale_ID = req.params.Sale_ID;
 
-    return res.json({
-      status: 1,
-      message: "Sale Deleted Successfully"
-    });
-  });
+    db.mainDb(
+        `SELECT * FROM sales_master WHERE Sale_ID=?`,
+        [Sale_ID],
+        (err, result) => {
+
+            if (err) return res.json({ status: 0, message: "DB Error" });
+
+            if (result.length === 0) {
+                return res.json({ status: 0, message: "Sale not found" });
+            }
+
+            return res.json({
+                status: 1,
+                data: result[0]
+            });
+
+        }
+    );
 };
 
-/* UPDATE SALE */
+
+/* ================= UPDATE SALE ================= */
 
 exports.updateSale = (req, res) => {
-  const data = req.body;
 
-  const updateQuery = `
-    UPDATE sales_master
-    SET
-      Invoice_No=?,
-      Invoice_Date=?,
-      Customer_Name=?,
-      Product_Name=?,
-      Quantity=?,
-      Price=?,
-      SGST=?,
-      CGST=?,
-      Sub_Total=?,
-      GST_Total=?,
-      Total_Amount=?
-    WHERE Sale_ID=?
-  `;
+    const reqData = req.body;
 
-  db.mainDb(
-    updateQuery,
-    [
-      data.Invoice_No,
-      data.Invoice_Date,
-      data.Customer_Name,
-      data.Product_Name,
-      data.Quantity,
-      data.Price,
-      data.SGST,
-      data.CGST,
-      data.Sub_Total,
-      data.GST_Total,
-      data.Total_Amount,
-      data.Sale_ID
-    ],
-    (err) => {
-      if (err) {
-        console.log(err);
+    const v = new Validator(reqData, {
+        Sale_ID: 'required|integer',
+        Invoice_No: 'required|string|maxLength:50',
+        Invoice_Date: 'required|date',
+        Customer_Name: 'required|string|maxLength:150',
+        Product_Name: 'required|string|maxLength:150',
+        Quantity: 'required|integer|min:1',
+        Price: 'required|numeric|min:0',
+        SGST: 'required|numeric|min:0',
+        CGST: 'required|numeric|min:0',
+        Sub_Total: 'required|numeric|min:0',
+        GST_Total: 'required|numeric|min:0',
+        Total_Amount: 'required|numeric|min:0'
+    });
+
+    v.check().then((matched) => {
+
+        if (!matched) {
+            const error_message = Object.values(v.errors)
+                .map(e => e.message)
+                .join(", ");
+            return res.json({ status: 0, message: error_message });
+        }
+
+        const updateQuery = `
+            UPDATE sales_master
+            SET
+                Invoice_No=?,
+                Invoice_Date=?,
+                Customer_Name=?,
+                Product_Name=?,
+                Quantity=?,
+                Price=?,
+                SGST=?,
+                CGST=?,
+                Sub_Total=?,
+                GST_Total=?,
+                Total_Amount=?
+            WHERE Sale_ID=?
+        `;
+
+        db.mainDb(
+            updateQuery,
+            [
+                reqData.Invoice_No,
+                reqData.Invoice_Date,
+                reqData.Customer_Name,
+                reqData.Product_Name,
+                reqData.Quantity,
+                reqData.Price,
+                reqData.SGST,
+                reqData.CGST,
+                reqData.Sub_Total,
+                reqData.GST_Total,
+                reqData.Total_Amount,
+                reqData.Sale_ID
+            ],
+            (err, result) => {
+
+                if (err) {
+                    console.log(err);
+                    return res.json({
+                        status: 0,
+                        message: "DB Error"
+                    });
+                }
+
+                if (result.affectedRows === 0) {
+                    return res.json({
+                        status: 0,
+                        message: "Sale not found"
+                    });
+                }
+
+                return res.json({
+                    status: 1,
+                    message: "Sale updated successfully"
+                });
+
+            }
+        );
+
+    });
+
+};
+
+
+/* ================= DELETE SALE ================= */
+
+exports.deleteSale = (req, res) => {
+
+    const Sale_ID = req.body.Sale_ID;
+
+    if (!Sale_ID) {
         return res.json({
-          status: 0,
-          message: "DB Error"
+            status: 0,
+            message: "Sale_ID is required"
         });
-      }
-
-      return res.json({
-        status: 1,
-        message: "Sale Updated Successfully"
-      });
     }
-  );
+
+    db.mainDb(
+        `DELETE FROM sales_master WHERE Sale_ID=?`,
+        [Sale_ID],
+        (err, result) => {
+
+            if (err) {
+                return res.json({
+                    status: 0,
+                    message: "DB Error"
+                });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.json({
+                    status: 0,
+                    message: "Sale not found"
+                });
+            }
+
+            return res.json({
+                status: 1,
+                message: "Sale deleted successfully"
+            });
+
+        }
+    );
 };
 

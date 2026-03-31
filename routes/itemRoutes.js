@@ -37,12 +37,10 @@ router.get('/getItemCode', itemController.getItemCodes);
 
 
 router.post("/addsales", itemController.addSale);
-
 router.get("/getSales", itemController.getSales);
-
-router.post("/deleteSales/:id", itemController.deleteSale);
-
+router.get("/getSale/:Sale_ID", itemController.getSale);
 router.post("/updateSales", itemController.updateSale);
+router.post("/deleteSales", itemController.deleteSale);
 
 
 
@@ -97,12 +95,7 @@ router.get('/getdropCustomers', itemController.getdropCustomer);
 
 
 
-// SALES
-// router.post('/createSalesProduct', itemController.createSalesProduct);
-// router.get('/getSalesProducts', itemController.getSalesProducts);
-// router.post('/getSalesProduct', itemController.getSalesProduct);
-// router.post('/updateSalesProduct', itemController.updateSalesProduct);
-// router.post('/deleteSalesProduct', itemController.deleteSalesProduct);
+
 
 //Machine master
 router.post('/createMachine', itemController.createMachine);
@@ -173,8 +166,7 @@ router.get('/activeitem', itemController.getActiveItems);
 router.get('/activetool', itemController.getActivetool);
 
 
-// Get only active sales products for dropdown
-router.get('/activesalesproducts', itemController.getActiveSalesProducts);
+
 
 
 
