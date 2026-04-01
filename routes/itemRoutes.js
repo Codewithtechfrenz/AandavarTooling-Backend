@@ -14,7 +14,7 @@ router.post('/deleteItem', itemController.deleteItem);
 // TOOLS
 router.post('/createtool', itemController.createTool);
 router.get('/getTools', itemController.getTools);
-router.get('/tool/:SI', itemController.getTool);
+// router.get('/tool/:SI', itemController.getTool);
 router.post('/updateTool', itemController.updateTool);
 router.post('/deleteTool', itemController.deleteTool);
 
@@ -36,14 +36,36 @@ router.get('/getItemCode', itemController.getItemCodes);
 /* SALES */
 
 
-router.post("/addsales", itemController.addSale);
-router.get("/getSales", itemController.getSales);
-router.get("/getSale/:Sale_ID", itemController.getSale);
-router.post("/updateSales", itemController.updateSale);
-router.post("/deleteSales", itemController.deleteSale);
+// router.post("/addsales", itemController.addSale);
+// router.get("/getSales", itemController.getSales);
+// router.get("/getSale/:Sale_ID", itemController.getSale);
+// router.post("/updateSales", itemController.updateSale);
+// router.post("/deleteSales", itemController.deleteSale);
 
-router.get('/invoice/:invoiceNo', itemController.getInvoice);
-router.get('/invoices', itemController.getInvoices);
+// router.get('/invoice/:invoiceNo', itemController.getInvoice);
+// router.get('/invoices', itemController.getInvoices);
+
+
+
+
+
+
+router.post("/addsales", itemController.addSale);
+
+router.get("/invoices", itemController.getInvoices);
+router.get("/invoice/:invoiceNo", itemController.getInvoice);
+
+router.get("/sales", itemController.getSales);
+
+router.get("/getInvoiceNumber", itemController.getNextInvoice);
+
+
+
+
+
+
+
+
 
 
 
