@@ -42,8 +42,8 @@ router.get("/getSale/:Sale_ID", itemController.getSale);
 router.post("/updateSales", itemController.updateSale);
 router.post("/deleteSales", itemController.deleteSale);
 
-router.get('/invoice/:invoiceNo', salesController.getInvoice);
-router.get('/invoices', salesController.getInvoices);
+router.get('/invoice/:invoiceNo', itemController.getInvoice);
+router.get('/invoices', itemController.getInvoices);
 
 
 
