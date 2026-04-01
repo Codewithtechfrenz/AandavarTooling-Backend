@@ -244,6 +244,7 @@ router.post('/create', itemController.createWorkOrder);
 router.get('/list', itemController.getWorkOrders);
 router.post('/complete', itemController.completeWorkOrder);
 
+router.post("/addsales", itemController.addSale);
 
 
 
