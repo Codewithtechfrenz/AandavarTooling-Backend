@@ -36,48 +36,51 @@ router.get('/getItemCode', itemController.getItemCodes);
 /* SALES */
 
 
-// router.post("/addsales", itemController.addSale);
-// router.get("/getSales", itemController.getSales);
-// router.get("/getSale/:Sale_ID", itemController.getSale);
-// router.post("/updateSales", itemController.updateSale);
-// router.post("/deleteSales", itemController.deleteSale);
+router.post("/addsales", itemController.addSale);
+router.get("/getSales", itemController.getSales);
+router.get("/getSale/:Sale_ID", itemController.getSale);
+router.post("/updateSales", itemController.updateSale);
+router.post("/deleteSales", itemController.deleteSale);
+
+router.get('/invoice/:invoiceNo', salesController.getInvoice);
+router.get('/invoices', salesController.getInvoices);
 
 
 
 /* ================= SALES ================= */
 
 // CREATE
-router.post("/addsales", (req, res, next) => {
-  console.log("ADD SALES API HIT");
-  console.log("Payload:", req.body);
-  next();
-}, itemController.addSale);
+// router.post("/addsales", (req, res, next) => {
+//   console.log("ADD SALES API HIT");
+//   console.log("Payload:", req.body);
+//   next();
+// }, itemController.addSale);
 
-// GET ALL
-router.get("/getSales", (req, res, next) => {
-  console.log("GET SALES API HIT");
-  next();
-}, itemController.getSales);
+// // GET ALL
+// router.get("/getSales", (req, res, next) => {
+//   console.log("GET SALES API HIT");
+//   next();
+// }, itemController.getSales);
 
-// GET SINGLE
-router.get("/getSale/:Sale_ID", (req, res, next) => {
-  console.log("GET SINGLE SALE HIT:", req.params.Sale_ID);
-  next();
-}, itemController.getSale);
+// // GET SINGLE
+// router.get("/getSale/:Sale_ID", (req, res, next) => {
+//   console.log("GET SINGLE SALE HIT:", req.params.Sale_ID);
+//   next();
+// }, itemController.getSale);
 
-// UPDATE
-router.post("/updateSales", (req, res, next) => {
-  console.log("UPDATE SALES API HIT");
-  console.log("Payload:", req.body);
-  next();
-}, itemController.updateSale);
+// // UPDATE
+// router.post("/updateSales", (req, res, next) => {
+//   console.log("UPDATE SALES API HIT");
+//   console.log("Payload:", req.body);
+//   next();
+// }, itemController.updateSale);
 
-// DELETE
-router.post("/deleteSales", (req, res, next) => {
-  console.log("DELETE SALES API HIT");
-  console.log("Payload:", req.body);
-  next();
-}, itemController.deleteSale);
+// // DELETE
+// router.post("/deleteSales", (req, res, next) => {
+//   console.log("DELETE SALES API HIT");
+//   console.log("Payload:", req.body);
+//   next();
+// }, itemController.deleteSale);
 
 
 
