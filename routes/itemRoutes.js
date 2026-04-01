@@ -164,6 +164,7 @@ router.get('/list', itemController.getWorkOrders);
 router.post('/complete', itemController.completeWorkOrder);
 
 router.post("/addsales", itemController.addSale);
+router.get("/invoice/:invoiceNo", itemController.getInvoiceDetails);
 
 
 module.exports = router;

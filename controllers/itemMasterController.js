@@ -2695,3 +2695,26 @@ exports.getNextInvoice = (req, res) => {
         });
     });
 };
+
+
+
+exports.getInvoiceDetails = (req, res) => {
+    const invoiceNo = req.params.invoiceNo;
+
+    const invoiceQuery = `SELECT * FROM sales_invoice WHERE Invoice_No=?`;
+    const itemsQuery = `SELECT * FROM sales_master WHERE Invoice_No=?`;
+
+    db.mainDb(invoiceQuery, [invoiceNo], (err, invoice) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+
+        db.mainDb(itemsQuery, [invoiceNo], (err, items) => {
+            if (err) return res.json({ status: 0, message: "DB error" });
+
+            return res.json({
+                status: 1,
+                invoice: invoice[0],
+                items: items
+            });
+        });
+    });
+};
