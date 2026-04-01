@@ -143,6 +143,9 @@ router.get('/activemachine', itemController.getActiveMachines);
 // Get only active items for dropdown
 router.get('/activeitem', itemController.getActiveItems);
 
+// Get only active items for dropdown
+router.get('/activeitemcode', itemController.getActiveItemcode);
+
 
 
 // Get only active tool for dropdown

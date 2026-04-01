@@ -1005,74 +1005,6 @@ exports.deleteMachine = (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// // Create Line Feed Out
-// exports.createLineFeedOut = (req, res) => {
-//     const reqData = req.body;
-//     const v = new Validator(reqData, {
-//         ItemID: 'required|integer',
-//         Quantity: 'required|integer|min:1',
-//         Status: 'required|string|in:Pending,Completed'
-//     });
-
-//     v.check().then((matched) => {
-//         if (!matched) {
-//             const error_message = Object.values(v.errors).map(e => e.message).join(", ");
-//             return res.json({ status: 0, message: error_message });
-//         }
-
-//         const insertQuery = `INSERT INTO Line_Feed_Out (ItemID, Quantity, Status) VALUES (?, ?, ?)`;
-//         db.mainDb(insertQuery, [reqData.ItemID, reqData.Quantity, reqData.Status], (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB error" });
-//             return res.json({ status: 1, message: "Line feed out created successfully", OutID: result.insertId });
-//         });
-//     });
-// };
-
-// // List Line Feed Out
-// exports.getLineFeedOuts = (req, res) => {
-//     db.mainDb(`SELECT lfo.*, im.ItemName, im.ItemCode 
-//                FROM Line_Feed_Out lfo 
-//                JOIN Item_Master im ON lfo.ItemID = im.SI 
-//                ORDER BY lfo.OutID DESC`, [], (err, result) => {
-//         if (err) return res.json({ status: 0, message: "DB error" });
-//         return res.json({ status: 1, data: result });
-//     });
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // exports.createItemInward = (req, res) => {
 //     const { ItemName, UOMName, Quantity, Rate, Status } = req.body;
 
@@ -1628,6 +1560,39 @@ exports.getActiveItems = (req, res) => {
         return res.json({ status: 1, data: items });
     });
 };
+
+
+
+exports.getActiveItemcode = (req, res) => {
+    const query = `
+        SELECT ItemCode
+        FROM item_master
+        ORDER BY ItemCode ASC
+    `;
+
+    db.mainDb(query, [], (err, result) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+
+        // Return only array of item codes
+        const items = result.map(row => row.ItemCode);
+        return res.json({ status: 1, data: items });
+    });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2718,3 +2683,6 @@ exports.getInvoiceDetails = (req, res) => {
         });
     });
 };
+
+
+
