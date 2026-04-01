@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-
 const itemController = require('../controllers/itemMasterController.js');
 
 // ITEMS
@@ -33,22 +32,6 @@ router.get('/getCurrentStocks', itemController.getCurrentStock);
 router.get('/getItemCode', itemController.getItemCodes);
 
 
-/* SALES */
-
-
-// router.post("/addsales", itemController.addSale);
-// router.get("/getSales", itemController.getSales);
-// router.get("/getSale/:Sale_ID", itemController.getSale);
-// router.post("/updateSales", itemController.updateSale);
-// router.post("/deleteSales", itemController.deleteSale);
-
-// router.get('/invoice/:invoiceNo', itemController.getInvoice);
-// router.get('/invoices', itemController.getInvoices);
-
-
-
-
-
 
 router.post("/addsales", itemController.addSale);
 
@@ -58,52 +41,6 @@ router.get("/invoice/:invoiceNo", itemController.getInvoice);
 router.get("/sales", itemController.getSales);
 
 router.get("/getInvoiceNumber", itemController.getNextInvoice);
-
-
-
-
-
-
-
-
-
-
-
-/* ================= SALES ================= */
-
-// CREATE
-// router.post("/addsales", (req, res, next) => {
-//   console.log("ADD SALES API HIT");
-//   console.log("Payload:", req.body);
-//   next();
-// }, itemController.addSale);
-
-// // GET ALL
-// router.get("/getSales", (req, res, next) => {
-//   console.log("GET SALES API HIT");
-//   next();
-// }, itemController.getSales);
-
-// // GET SINGLE
-// router.get("/getSale/:Sale_ID", (req, res, next) => {
-//   console.log("GET SINGLE SALE HIT:", req.params.Sale_ID);
-//   next();
-// }, itemController.getSale);
-
-// // UPDATE
-// router.post("/updateSales", (req, res, next) => {
-//   console.log("UPDATE SALES API HIT");
-//   console.log("Payload:", req.body);
-//   next();
-// }, itemController.updateSale);
-
-// // DELETE
-// router.post("/deleteSales", (req, res, next) => {
-//   console.log("DELETE SALES API HIT");
-//   console.log("Payload:", req.body);
-//   next();
-// }, itemController.deleteSale);
-
 
 
 
@@ -154,11 +91,6 @@ router.get('/getdropCustomers', itemController.getdropCustomer);
 
 
 
-
-
-
-
-
 //Machine master
 router.post('/createMachine', itemController.createMachine);
 router.get('/getMachines', itemController.getMachines);
@@ -181,17 +113,6 @@ router.post("/createReturnDeliveryChallan", itemController.createReturnDeliveryC
 router.get("/getReturnDeliveryChallans", itemController.getReturnDeliveryChallans);
 router.post("/getReturnDeliveryChallan", itemController.getReturnDeliveryChallan);
 router.post("/deleteReturnDeliveryChallan", itemController.deleteReturnDeliveryChallan);
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -238,72 +159,11 @@ router.get('/dashboards', itemController.getDashboardData);
 
 
 
-
-//
 router.post('/create', itemController.createWorkOrder);
 router.get('/list', itemController.getWorkOrders);
 router.post('/complete', itemController.completeWorkOrder);
 
 router.post("/addsales", itemController.addSale);
-
-
-
-
-
-
-
-
-
-
-
-
-// Register
-// router.post("/register", loginController.register);
-
-// Login
-// router.post("/login", loginController.login);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 module.exports = router;

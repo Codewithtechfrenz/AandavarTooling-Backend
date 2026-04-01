@@ -96,7 +96,7 @@ app.use('/stock', stockRouter);
 app.use('/categories', CategoryRouter);
 app.use('/workers', WorkerRouter);
 app.use('/customers', CustomerRouter);
-app.use('/sales', SalesRouter);
+app.use('/backend/sales', SalesRouter);
 app.use('/machines', MachineProRouter);
 //app.use('/invoice', invoiceRouter);
 
