@@ -14,26 +14,26 @@ const mysql = require("mysql");
 // });
 
 
-const pool = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "Aandavar@2026!#$",
-    database: "aandavartool",
-   // port: 3306,
-    connectionLimit: 50,
-    multipleStatements: true
-});
-
-
 // const pool = mysql.createPool({
 //     host: "localhost",
 //     user: "root",
-//     password: "",
+//     password: "Aandavar@2026!#$",
 //     database: "aandavartool",
-//     // port: 3306,
+//    // port: 3306,
 //     connectionLimit: 50,
 //     multipleStatements: true
 // });
+
+
+const pool = mysql.createPool({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "aandavartool",
+    // port: 3306,
+    connectionLimit: 50,
+    multipleStatements: true
+});
 
 
 
