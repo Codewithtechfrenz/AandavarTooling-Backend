@@ -1766,7 +1766,7 @@ exports.createDeliveryChallan = (req, res) => {
     const reqData = req.body;
 
     const v = new Validator(reqData, {
-        delivery_challan_no: 'required|string|maxLength:50', // ✅ ADDED
+        DeliveryChallanNo: 'required|string|maxLength:50', // ✅ FIXED
         customer_name: 'required|string|maxLength:255',
         product_name: 'required|string|maxLength:255',
         quantity: 'required|integer|min:1',
@@ -1783,14 +1783,14 @@ exports.createDeliveryChallan = (req, res) => {
 
         const insertQuery = `
             INSERT INTO delivery_challan 
-            (delivery_challan_no, customer_name, product_name, quantity, created_date) 
+            (DeliveryChallanNo, customer_name, product_name, quantity, created_date) 
             VALUES (?, ?, ?, ?, ?)
-        `; // ✅ ADDED COLUMN
+        `; // ✅ FIXED COLUMN NAME
 
         db.mainDb(
             insertQuery,
             [
-                reqData.delivery_challan_no, // ✅ ADDED
+                reqData.DeliveryChallanNo, // ✅ FIXED
                 reqData.customer_name,
                 reqData.product_name,
                 reqData.quantity,
@@ -1798,7 +1798,7 @@ exports.createDeliveryChallan = (req, res) => {
             ],
             (err, result) => {
                 if (err) {
-                    console.log(err);
+                    console.log("DB ERROR:", err); // ✅ DEBUG
                     return res.json({ status: 0, message: "DB error" });
                 }
 
@@ -1859,7 +1859,7 @@ exports.updateDeliveryChallan = (req, res) => {
 
     const v = new Validator(reqData, {
         id: 'required|integer',
-        delivery_challan_no: 'required|string|maxLength:50', // ✅ ADDED
+        DeliveryChallanNo: 'required|string|maxLength:50', // ✅ FIXED
         customer_name: 'required|string|maxLength:255',
         product_name: 'required|string|maxLength:255',
         quantity: 'required|integer|min:1',
@@ -1876,14 +1876,14 @@ exports.updateDeliveryChallan = (req, res) => {
 
         const updateQuery = `
             UPDATE delivery_challan
-            SET delivery_challan_no=?, customer_name=?, product_name=?, quantity=?, created_date=?
+            SET DeliveryChallanNo=?, customer_name=?, product_name=?, quantity=?, created_date=?
             WHERE id=?
-        `; // ✅ ADDED COLUMN
+        `; // ✅ FIXED COLUMN
 
         db.mainDb(
             updateQuery,
             [
-                reqData.delivery_challan_no, // ✅ ADDED
+                reqData.DeliveryChallanNo, // ✅ FIXED
                 reqData.customer_name,
                 reqData.product_name,
                 reqData.quantity,
@@ -1892,6 +1892,7 @@ exports.updateDeliveryChallan = (req, res) => {
             ],
             (err, result) => {
                 if (err) {
+                    console.log("DB ERROR:", err); // ✅ DEBUG
                     return res.json({ status: 0, message: "DB error" });
                 }
 
