@@ -1766,6 +1766,7 @@ exports.createDeliveryChallan = (req, res) => {
     const reqData = req.body;
 
     const v = new Validator(reqData, {
+        delivery_challan_no: 'required|string|maxLength:50', // ✅ ADDED
         customer_name: 'required|string|maxLength:255',
         product_name: 'required|string|maxLength:255',
         quantity: 'required|integer|min:1',
@@ -1782,13 +1783,14 @@ exports.createDeliveryChallan = (req, res) => {
 
         const insertQuery = `
             INSERT INTO delivery_challan 
-            (customer_name, product_name, quantity, created_date)
-            VALUES (?, ?, ?, ?)
-        `;
+            (delivery_challan_no, customer_name, product_name, quantity, created_date) 
+            VALUES (?, ?, ?, ?, ?)
+        `; // ✅ ADDED COLUMN
 
         db.mainDb(
             insertQuery,
             [
+                reqData.delivery_challan_no, // ✅ ADDED
                 reqData.customer_name,
                 reqData.product_name,
                 reqData.quantity,
@@ -1809,7 +1811,6 @@ exports.createDeliveryChallan = (req, res) => {
         );
     });
 };
-
 
 exports.getDeliveryChallans = (req, res) => {
     db.mainDb(
@@ -1858,6 +1859,7 @@ exports.updateDeliveryChallan = (req, res) => {
 
     const v = new Validator(reqData, {
         id: 'required|integer',
+        delivery_challan_no: 'required|string|maxLength:50', // ✅ ADDED
         customer_name: 'required|string|maxLength:255',
         product_name: 'required|string|maxLength:255',
         quantity: 'required|integer|min:1',
@@ -1874,13 +1876,14 @@ exports.updateDeliveryChallan = (req, res) => {
 
         const updateQuery = `
             UPDATE delivery_challan
-            SET customer_name=?, product_name=?, quantity=?, created_date=?
+            SET delivery_challan_no=?, customer_name=?, product_name=?, quantity=?, created_date=?
             WHERE id=?
-        `;
+        `; // ✅ ADDED COLUMN
 
         db.mainDb(
             updateQuery,
             [
+                reqData.delivery_challan_no, // ✅ ADDED
                 reqData.customer_name,
                 reqData.product_name,
                 reqData.quantity,
