@@ -641,11 +641,13 @@ exports.deleteUOM = (req, res) => {
 // Create Worker
 exports.createWorker = (req, res) => {
     const reqData = req.body;
+
     const v = new Validator(reqData, {
         WorkerCode: 'required|string|maxLength:50',
         WorkerName: 'required|string|maxLength:150',
         WorkerDepartment: 'sometimes|string|maxLength:100',
         WorkerJoiningDate: 'sometimes|date',
+        Salary: 'sometimes|numeric', // ✅ added
         Status: 'sometimes|string|in:Active,Inactive'
     });
 
@@ -655,12 +657,14 @@ exports.createWorker = (req, res) => {
             return res.json({ status: 0, message: error_message });
         }
 
-        const insertQuery = `INSERT INTO Worker_Master (WorkerCode, WorkerName, WorkerDepartment, WorkerJoiningDate) VALUES (?, ?, ?, ?)`;
+        const insertQuery = `INSERT INTO Worker_Master (WorkerCode, WorkerName, WorkerDepartment, WorkerJoiningDate, Salary) VALUES (?, ?, ?, ?, ?)`; // ✅ added Salary
+
         db.mainDb(insertQuery, [
             reqData.WorkerCode,
             reqData.WorkerName,
             reqData.WorkerDepartment || null,
-            reqData.WorkerJoiningDate || null
+            reqData.WorkerJoiningDate || null,
+            reqData.Salary || 0 // ✅ added
         ], (err, result) => {
             if (err) {
                 if (err.code === "ER_DUP_ENTRY") return res.json({ status: 0, message: "WorkerCode already exists" });
@@ -693,14 +697,16 @@ exports.getWorker = (req, res) => {
 
 // Update Worker
 exports.updateWorker = (req, res) => {
-    const { SI, WorkerCode, WorkerName, WorkerDepartment, WorkerJoiningDate } = req.body;
+    const { SI, WorkerCode, WorkerName, WorkerDepartment, WorkerJoiningDate, Salary } = req.body; // ✅ added Salary
+
     if (!SI) return res.json({ status: 0, message: "SI is required" });
 
-    const v = new Validator({ WorkerCode, WorkerName, WorkerDepartment, WorkerJoiningDate }, {
+    const v = new Validator({ WorkerCode, WorkerName, WorkerDepartment, WorkerJoiningDate, Salary }, {
         WorkerCode: 'required|string|maxLength:50',
         WorkerName: 'required|string|maxLength:150',
         WorkerDepartment: 'sometimes|string|maxLength:100',
-        WorkerJoiningDate: 'sometimes|date'
+        WorkerJoiningDate: 'sometimes|date',
+        Salary: 'sometimes|numeric' // ✅ added
     });
 
     v.check().then((matched) => {
@@ -709,15 +715,26 @@ exports.updateWorker = (req, res) => {
             return res.json({ status: 0, message: error_message });
         }
 
-        db.mainDb(`UPDATE Worker_Master SET WorkerCode=?, WorkerName=?, WorkerDepartment=?, WorkerJoiningDate=? WHERE SI=?`,
-            [WorkerCode, WorkerName, WorkerDepartment || null, WorkerJoiningDate || null, SI],
+        db.mainDb(
+            `UPDATE Worker_Master 
+             SET WorkerCode=?, WorkerName=?, WorkerDepartment=?, WorkerJoiningDate=?, Salary=? 
+             WHERE SI=?`, // ✅ added Salary
+            [
+                WorkerCode,
+                WorkerName,
+                WorkerDepartment || null,
+                WorkerJoiningDate || null,
+                Salary || 0, // ✅ added
+                SI
+            ],
             (err, result) => {
                 if (err) {
                     if (err.code === "ER_DUP_ENTRY") return res.json({ status: 0, message: "WorkerCode already exists" });
                     return res.json({ status: 0, message: "DB error" });
                 }
                 return res.json({ status: 1, message: "Worker updated successfully" });
-            });
+            }
+        );
     });
 };
 
