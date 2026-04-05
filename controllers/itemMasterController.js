@@ -1878,7 +1878,7 @@ exports.updateDeliveryChallan = (req, res) => {
             UPDATE delivery_challan
             SET DeliveryChallanNo=?, customer_name=?, product_name=?, quantity=?, created_date=?
             WHERE id=?
-        `; // ✅ FIXED COLUMN
+        `;
 
         db.mainDb(
             updateQuery,
@@ -1892,17 +1892,12 @@ exports.updateDeliveryChallan = (req, res) => {
             ],
             (err, result) => {
                 if (err) {
-                    console.log("DB ERROR:", err); // ✅ DEBUG
                     return res.json({ status: 0, message: "DB error" });
-                }
-
-                if (result.affectedRows === 0) {
-                    return res.json({ status: 0, message: "Record not found" });
                 }
 
                 return res.json({
                     status: 1,
-                    message: "Delivery Challan updated successfully"
+                    message: "Updated successfully"
                 });
             }
         );
