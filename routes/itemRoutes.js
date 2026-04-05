@@ -100,12 +100,13 @@ router.post('/deleteMachine', itemController.deleteMachine);
 
 
 //delivery challan
-router.post('/createDeliveryChallan', itemController.createDeliveryChallan);
+router.post('/createDeliveryChallanItem', itemController.createDeliveryChallanItem);
 router.get('/getDeliveryChallans', itemController.getDeliveryChallans);
 router.post('/getDeliveryChallan', itemController.getDeliveryChallan);
 router.post('/updateDeliveryChallan', itemController.updateDeliveryChallan);
 router.post('/deleteDeliveryChallan', itemController.deleteDeliveryChallan);
-
+router.get("/getDeliveryChallanHistory", itemController.getDeliveryChallanHistory);
+router.get("/getChallanByNumber/:challanNo", itemController.getChallanByNumber);
 
 
 //return delivery challan

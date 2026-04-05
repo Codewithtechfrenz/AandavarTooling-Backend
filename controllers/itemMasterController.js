@@ -1762,56 +1762,29 @@ exports.getDashboardData = (req, res) => {
 
 
 
-exports.createDeliveryChallan = (req, res) => {
-    const reqData = req.body;
+exports.createDeliveryChallanItem = (req, res) => {
+    const { DeliveryChallanNo, customer_name, product_name, quantity, created_date } = req.body;
 
-    const v = new Validator(reqData, {
-        DeliveryChallanNo: 'required|string|maxLength:50', // ✅ FIXED
-        customer_name: 'required|string|maxLength:255',
-        product_name: 'required|string|maxLength:255',
-        quantity: 'required|integer|min:1',
-        created_date: 'required|date'
-    });
+    if (!DeliveryChallanNo || !customer_name || !product_name || !quantity) {
+        return res.json({ status: 0, message: "All fields are required" });
+    }
 
-    v.check().then((matched) => {
-        if (!matched) {
-            const error_message = Object.values(v.errors)
-                .map(e => e.message)
-                .join(", ");
-            return res.json({ status: 0, message: error_message });
+    const query = `
+        INSERT INTO delivery_challan
+        (DeliveryChallanNo, customer_name, product_name, quantity, created_date)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+
+    db.mainDb(
+        query,
+        [DeliveryChallanNo, customer_name, product_name, quantity, created_date],
+        (err, result) => {
+            if (err) return res.json({ status: 0, message: "DB error" });
+
+            res.json({ status: 1, message: "Item added successfully", id: result.insertId });
         }
-
-        const insertQuery = `
-            INSERT INTO delivery_challan 
-            (DeliveryChallanNo, customer_name, product_name, quantity, created_date) 
-            VALUES (?, ?, ?, ?, ?)
-        `; // ✅ FIXED COLUMN NAME
-
-        db.mainDb(
-            insertQuery,
-            [
-                reqData.DeliveryChallanNo, // ✅ FIXED
-                reqData.customer_name,
-                reqData.product_name,
-                reqData.quantity,
-                reqData.created_date
-            ],
-            (err, result) => {
-                if (err) {
-                    console.log("DB ERROR:", err); // ✅ DEBUG
-                    return res.json({ status: 0, message: "DB error" });
-                }
-
-                return res.json({
-                    status: 1,
-                    message: "Delivery Challan created successfully",
-                    id: result.insertId
-                });
-            }
-        );
-    });
+    );
 };
-
 exports.getDeliveryChallans = (req, res) => {
     db.mainDb(
         `SELECT * FROM delivery_challan ORDER BY id DESC`,
@@ -1931,6 +1904,43 @@ exports.deleteDeliveryChallan = (req, res) => {
             });
         }
     );
+};
+
+
+
+exports.getChallanByNumber = (req, res) => {
+    const { challanNo } = req.params;
+
+    db.mainDb(
+        `SELECT * FROM delivery_challan WHERE DeliveryChallanNo = ?`,
+        [challanNo],
+        (err, result) => {
+            if (err) return res.json({ status: 0, message: "DB error" });
+
+            res.json({ status: 1, data: result });
+        }
+    );
+};
+
+
+exports.getDeliveryChallanHistory = (req, res) => {
+    const query = `
+        SELECT 
+            DeliveryChallanNo,
+            customer_name,
+            created_date,
+            COUNT(*) AS total_items,
+            SUM(quantity) AS total_quantity
+        FROM delivery_challan
+        GROUP BY DeliveryChallanNo
+        ORDER BY created_date DESC
+    `;
+
+    db.mainDb(query, [], (err, result) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+
+        res.json({ status: 1, data: result });
+    });
 };
 
 //----------------------------------------------------------------------------------
