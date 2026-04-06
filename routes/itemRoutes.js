@@ -154,21 +154,25 @@ router.get('/activetool', itemController.getActivetool);
 
 
 
-
-
-
 // Get only active sales products for dropdown
 router.get('/dashboards', itemController.getDashboardData);
 
 
-
-
-router.post('/create', itemController.createWorkOrder);
-router.get('/list', itemController.getWorkOrders);
-router.post('/complete', itemController.completeWorkOrder);
-
 router.post("/addsales", itemController.addSale);
 router.get("/invoice/:invoiceNo", itemController.getInvoiceDetails);
 
+
+
+// CREATE
+router.post("/createworkorder", itemController.createLineOut);
+
+// UPDATE
+router.post("/updateworkorder", itemController.updateLineOut);
+
+// COMPLETE
+router.post("/completeworkorder", itemController.completeLineOut);
+
+// LIST
+router.get("/list", itemController.getLineOutList);
 
 module.exports = router;

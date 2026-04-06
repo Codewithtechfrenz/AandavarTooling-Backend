@@ -2118,78 +2118,7 @@ function updateToolStock(ToolName, UOMName, qtyChange) {
 
 
 //--------------------------------------------------------------------------
-//work order
 
-// Work Order Controller
-exports.createWorkOrder = (req, res) => {
-    const { ProductName, ProductUOM, ToolName, WorkerName, MachineName, ProductQty, ToolQty, Status } = req.body;
-
-    if (!ProductName || !ProductUOM || !ProductQty || !WorkerName || !MachineName) {
-        return res.json({ status: 0, message: "Required fields missing" });
-    }
-
-    const insertQuery = `
-    INSERT INTO work_order
-    (ProductName, ProductUOM, ToolName, WorkerName, MachineName, ProductQty, ToolQty, Status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-    db.mainDb(insertQuery, [ProductName, ProductUOM, ToolName || null, WorkerName, MachineName, ProductQty, ToolQty || 0, Status || 'Pending'], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error", error: err });
-        res.json({ status: 1, message: "Work order created successfully" });
-    });
-};
-
-// Update Work Order
-exports.updateWorkOrder = (req, res) => {
-    const { WorkOrderID, ProductName, ProductUOM, ToolName, WorkerName, MachineName, ProductQty, ToolQty } = req.body;
-
-    if (!WorkOrderID || !ProductName || !ProductUOM || !ProductQty || !WorkerName || !MachineName) {
-        return res.json({ status: 0, message: "Required fields missing" });
-    }
-
-    const updateQuery = `
-    UPDATE work_order
-    SET ProductName=?, ProductUOM=?, ToolName=?, WorkerName=?, MachineName=?, ProductQty=?, ToolQty=?
-    WHERE WorkOrderID=?
-  `;
-
-    db.mainDb(updateQuery, [ProductName, ProductUOM, ToolName || null, WorkerName, MachineName, ProductQty, ToolQty || 0, WorkOrderID], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error", error: err });
-        res.json({ status: 1, message: "Work order updated successfully" });
-    });
-};
-
-// Complete Work Order
-exports.completeWorkOrder = (req, res) => {
-    const { WorkOrderID } = req.body;
-
-    db.mainDb(`SELECT * FROM work_order WHERE WorkOrderID=?`, [WorkOrderID], (err, rows) => {
-        if (err || rows.length === 0) return res.json({ status: 0, message: "Work order not found" });
-
-        const order = rows[0];
-
-        Promise.all([
-            reduceProductStock(order.ProductName, order.ProductUOM, order.ProductQty),
-            order.ToolName ? reduceToolStock(order.ToolName, order.ToolQty) : Promise.resolve()
-        ])
-            .then(() => {
-                db.mainDb(`UPDATE work_order SET Status='Completed' WHERE WorkOrderID=?`, [WorkOrderID], (err2) => {
-                    if (err2) return res.json({ status: 0, message: "Failed to update status" });
-                    res.json({ status: 1, message: "Work order completed & stock updated" });
-                });
-            })
-            .catch(err => res.json({ status: 0, message: "Stock update failed", error: err }));
-    });
-};
-
-// Get Work Orders
-exports.getWorkOrders = (req, res) => {
-    db.mainDb(`SELECT * FROM work_order ORDER BY CreatedDate DESC`, [], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error", error: err });
-        res.json({ status: 1, data: result });
-    });
-};
 
 /* ================= HELPER FUNCTIONS ================= */
 function reduceProductStock(name, uom, qty) {
@@ -2246,240 +2175,7 @@ exports.getItemCodes = (req, res) => {
 
 
 
-// exports.addSale = (req, res) => {
-//     const reqData = req.body;
 
-//     const v = new Validator();
-//     const schema = {
-//         Invoice_No: 'required|string|max:50',
-//         Invoice_Date: 'required|date',
-//         Customer_Name: 'required|string|max:150',
-//         Customer_Address: 'string|optional',
-//         Customer_Phone: 'string|optional',
-//         Customer_GSTIN: 'string|optional',
-//         Product_Name: 'required|string|max:150',
-//         Quantity: 'required|integer|min:1',
-//         Price: 'required|numeric|min:0',
-//         SGST: 'required|numeric|min:0',
-//         CGST: 'required|numeric|min:0',
-//         Sub_Total: 'required|numeric|min:0',
-//         GST_Total: 'required|numeric|min:0',
-//         Total_Amount: 'required|numeric|min:0'
-//     };
-
-//     const check = v.compile(schema);
-//     const matched = check(reqData);
-//     if (matched !== true) {
-//         const error_message = matched.map(e => e.message).join(", ");
-//         return res.json({ status: 0, message: error_message });
-//     }
-
-//     const subTotal = reqData.Quantity * reqData.Price;
-//     const gstTotal = subTotal * ((reqData.SGST + reqData.CGST) / 100);
-//     const totalAmount = subTotal + gstTotal;
-
-//     const checkInvoiceQuery = "SELECT * FROM sales_invoice WHERE Invoice_No=?";
-//     db.mainDb(checkInvoiceQuery, [reqData.Invoice_No], (err, invoiceRows) => {
-//         if (err) return res.json({ status: 0, message: "DB Error" });
-
-//         const proceedItemInsert = () => {
-//             const insertQuery = `
-//                 INSERT INTO sales_master
-//                 (Invoice_No, Invoice_Date, Customer_Name, Product_Name, Quantity, Price, SGST, CGST, Sub_Total, GST_Total, Total_Amount)
-//                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-//             `;
-//             db.mainDb(insertQuery, [
-//                 reqData.Invoice_No,
-//                 reqData.Invoice_Date,
-//                 reqData.Customer_Name,
-//                 reqData.Product_Name,
-//                 reqData.Quantity,
-//                 reqData.Price,
-//                 reqData.SGST,
-//                 reqData.CGST,
-//                 subTotal,
-//                 gstTotal,
-//                 totalAmount
-//             ], (err4, result) => {
-//                 if (err4) return res.json({ status: 0, message: "DB Error" });
-
-//                 return res.json({
-//                     status: 1,
-//                     message: "Sale item added successfully",
-//                     Sale_ID: result.insertId
-//                 });
-//             });
-//         };
-
-//         if (invoiceRows.length === 0) {
-//             // Create invoice
-//             const insertInvoice = `
-//                 INSERT INTO sales_invoice
-//                 (Invoice_No, Invoice_Date, Customer_Name, Customer_Address, Customer_Phone, Customer_GSTIN, Subtotal, GST_Total, Total_Amount)
-//                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-//             `;
-//             db.mainDb(insertInvoice, [
-//                 reqData.Invoice_No,
-//                 reqData.Invoice_Date,
-//                 reqData.Customer_Name,
-//                 reqData.Customer_Address || "",
-//                 reqData.Customer_Phone || "",
-//                 reqData.Customer_GSTIN || "",
-//                 subTotal,
-//                 gstTotal,
-//                 totalAmount
-//             ], (err2) => {
-//                 if (err2) return res.json({ status: 0, message: "DB Error" });
-//                 proceedItemInsert();
-//             });
-//         } else {
-//             // Update invoice totals
-//             const updateInvoice = `
-//                 UPDATE sales_invoice
-//                 SET Subtotal = Subtotal + ?, GST_Total = GST_Total + ?, Total_Amount = Total_Amount + ?
-//                 WHERE Invoice_No = ?
-//             `;
-//             db.mainDb(updateInvoice, [subTotal, gstTotal, totalAmount, reqData.Invoice_No], (err3) => {
-//                 if (err3) return res.json({ status: 0, message: "DB Error" });
-//                 proceedItemInsert();
-//             });
-//         }
-//     });
-// };
-
-// /* ================= GET ALL SALES ================= */
-// exports.getSales = (req, res) => {
-//     db.mainDb(
-//         "SELECT * FROM sales_master ORDER BY Sale_ID DESC",
-//         [],
-//         (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB Error" });
-//             return res.json({ status: 1, data: result });
-//         }
-//     );
-// };
-
-// /* ================= GET SINGLE SALE ================= */
-// exports.getSale = (req, res) => {
-//     const Sale_ID = req.params.Sale_ID;
-//     db.mainDb(
-//         "SELECT * FROM sales_master WHERE Sale_ID=?",
-//         [Sale_ID],
-//         (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB Error" });
-//             if (result.length === 0) return res.json({ status: 0, message: "Sale not found" });
-//             return res.json({ status: 1, data: result[0] });
-//         }
-//     );
-// };
-
-// /* ================= UPDATE SALE ================= */
-// exports.updateSale = (req, res) => {
-//     const reqData = req.body;
-//     const v = new Validator();
-//     const schema = {
-//         Sale_ID: 'required|integer',
-//         Invoice_No: 'required|string|max:50',
-//         Invoice_Date: 'required|date',
-//         Customer_Name: 'required|string|max:150',
-//         Product_Name: 'required|string|max:150',
-//         Quantity: 'required|integer|min:1',
-//         Price: 'required|numeric|min:0',
-//         SGST: 'required|numeric|min:0',
-//         CGST: 'required|numeric|min:0',
-//         Sub_Total: 'required|numeric|min:0',
-//         GST_Total: 'required|numeric|min:0',
-//         Total_Amount: 'required|numeric|min:0'
-//     };
-
-//     const check = v.compile(schema);
-//     const matched = check(reqData);
-//     if (matched !== true) {
-//         const error_message = matched.map(e => e.message).join(", ");
-//         return res.json({ status: 0, message: error_message });
-//     }
-
-//     const updateQuery = `
-//         UPDATE sales_master
-//         SET Invoice_No=?, Invoice_Date=?, Customer_Name=?, Product_Name=?, Quantity=?, Price=?, SGST=?, CGST=?, Sub_Total=?, GST_Total=?, Total_Amount=?
-//         WHERE Sale_ID=?
-//     `;
-//     db.mainDb(updateQuery, [
-//         reqData.Invoice_No,
-//         reqData.Invoice_Date,
-//         reqData.Customer_Name,
-//         reqData.Product_Name,
-//         reqData.Quantity,
-//         reqData.Price,
-//         reqData.SGST,
-//         reqData.CGST,
-//         reqData.Sub_Total,
-//         reqData.GST_Total,
-//         reqData.Total_Amount,
-//         reqData.Sale_ID
-//     ], (err, result) => {
-//         if (err) return res.json({ status: 0, message: "DB Error" });
-//         if (result.affectedRows === 0) return res.json({ status: 0, message: "Sale not found" });
-//         return res.json({ status: 1, message: "Sale updated successfully" });
-//     });
-// };
-
-// /* ================= DELETE SALE ================= */
-// exports.deleteSale = (req, res) => {
-//     const Sale_ID = req.body.Sale_ID;
-//     if (!Sale_ID) return res.json({ status: 0, message: "Sale_ID is required" });
-
-//     db.mainDb(
-//         "DELETE FROM sales_master WHERE Sale_ID=?",
-//         [Sale_ID],
-//         (err, result) => {
-//             if (err) return res.json({ status: 0, message: "DB Error" });
-//             if (result.affectedRows === 0) return res.json({ status: 0, message: "Sale not found" });
-//             return res.json({ status: 1, message: "Sale deleted successfully" });
-//         }
-//     );
-// };
-
-
-
-// //--------------------------------------------------------------
-
-// /* ========== GET INVOICE + ITEMS ========== */
-// exports.getInvoice = async (req, res) => {
-//   try {
-//     const invoiceNo = req.params.invoiceNo;
-
-//     const [invoice] = await db.promise().query(
-//       "SELECT * FROM sales_invoice WHERE Invoice_No = ?",
-//       [invoiceNo]
-//     );
-
-//     if (invoice.length === 0) return res.json({ status: 0, message: "Invoice not found" });
-
-//     const [items] = await db.promise().query(
-//       "SELECT * FROM sales_master WHERE Invoice_No = ?",
-//       [invoiceNo]
-//     );
-
-//     res.json({ status: 1, invoice: invoice[0], items });
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ status: 0, message: "DB Error" });
-//   }
-// };
-
-// /* ========== GET ALL INVOICES ========== */
-// exports.getInvoices = async (req, res) => {
-//   try {
-//     const [invoices] = await db.promise().query(
-//       "SELECT * FROM sales_invoice ORDER BY Invoice_ID DESC"
-//     );
-//     res.json({ status: 1, data: invoices });
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ status: 0, message: "DB Error" });
-//   }
-// };
 
 
 
@@ -2712,3 +2408,182 @@ exports.getInvoiceDetails = (req, res) => {
 
 
 
+
+// CREATE MULTIPLE TOOLS FOR ONE WO
+exports.createLineOut = (req, res) => {
+  const data = req.body;
+
+  const v = new Validator(data, {
+    work_order_no: "required|string|max:50",
+    machine_name: "required|string|max:100",
+    worker_name: "required|string|max:100",
+    tools: "required|array"
+  });
+
+  v.check().then((matched) => {
+    if (!matched) {
+      const error_message = Object.values(v.errors)
+        .map(e => e.message)
+        .join(", ");
+      return res.json({ status: 0, message: error_message });
+    }
+
+    // ✅ Prepare multiple rows
+    const values = data.tools.map((t) => [
+      data.work_order_no,
+      t.tool_name,
+      t.category_name,
+      t.tool_qty,
+      data.machine_name,
+      data.worker_name
+    ]);
+
+    const query = `
+      INSERT INTO line_out
+      (work_order_no, tool_name, category_name, tool_qty, machine_name, worker_name)
+      VALUES ?
+    `;
+
+    db.mainDb(query, [values], (err) => {
+      if (err) {
+        console.log(err);
+        return res.json({ status: 0, message: "Insert failed" });
+      }
+
+      return res.json({
+        status: 1,
+        message: "Work Order created with multiple tools"
+      });
+    });
+  });
+};
+
+
+
+
+exports.updateLineOut = (req, res) => {
+  const data = req.body;
+
+  const v = new Validator(data, {
+    id: "required|integer",
+    tool_name: "required|string|max:100",
+    category_name: "required|string|max:100",
+    tool_qty: "required|integer|min:1"
+  });
+
+  v.check().then((matched) => {
+    if (!matched) {
+      const error_message = Object.values(v.errors)
+        .map(e => e.message)
+        .join(", ");
+      return res.json({ status: 0, message: error_message });
+    }
+
+    const query = `
+      UPDATE line_out 
+      SET tool_name=?, category_name=?, tool_qty=? 
+      WHERE id=?
+    `;
+
+    db.mainDb(
+      query,
+      [
+        data.tool_name,
+        data.category_name,
+        data.tool_qty,
+        data.id
+      ],
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          return res.json({ status: 0, message: "Update failed" });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.json({ status: 0, message: "Record not found" });
+        }
+
+        return res.json({
+          status: 1,
+          message: "Updated successfully"
+        });
+      }
+    );
+  });
+};
+
+
+
+
+exports.completeLineOut = (req, res) => {
+  const work_order_no = req.body.work_order_no;
+
+  if (!work_order_no) {
+    return res.json({ status: 0, message: "Work order required" });
+  }
+
+  const getQuery = `
+    SELECT tool_name, tool_qty 
+    FROM line_out 
+    WHERE work_order_no=? AND status='Pending'
+  `;
+
+  db.mainDb(getQuery, [work_order_no], (err, rows) => {
+    if (err) return res.json({ status: 0 });
+
+    rows.forEach((item) => {
+      db.mainDb(
+        `UPDATE tool_current_stock 
+         SET AvailableQty = AvailableQty - ? 
+         WHERE ToolName = ?`,
+        [item.tool_qty, item.tool_name],
+        () => {}
+      );
+    });
+
+    db.mainDb(
+      `UPDATE line_out SET status='Completed' WHERE work_order_no=?`,
+      [work_order_no],
+      () => {
+        return res.json({
+          status: 1,
+          message: "WO Completed & Stock Updated"
+        });
+      }
+    );
+  });
+};
+
+exports.getLineOutList = (req, res) => {
+
+  const query = `
+    SELECT 
+      id,
+      work_order_no,
+      tool_name,
+      category_name,
+      tool_qty,
+      machine_name,
+      worker_name,
+      status,
+      DATE_FORMAT(created_at, '%d-%m-%Y %H:%i') as created_at
+    FROM line_out
+    ORDER BY id DESC
+  `;
+
+  db.mainDb(query, [], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.json({
+        status: 0,
+        message: "DB Error"
+      });
+    }
+
+    return res.json({
+      status: 1,
+      data: result
+    });
+  });
+
+};
