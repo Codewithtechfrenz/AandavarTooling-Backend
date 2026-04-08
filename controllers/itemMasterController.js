@@ -2481,18 +2481,22 @@ exports.deleteInvoice = (req, res) => {
 
 
 
-
 exports.createLineOut = (req, res) => {
   const data = req.body;
 
-  // ✅ SAFE CLEANING
+  // ✅ CLEAN INPUTS
   const work_date = data.work_date;
-  const machine_name = data.machine_name?.toString().trim();
-  const worker_name = data.worker_name?.toString().trim();
-  const tools = Array.isArray(data.tools) ? data.tools : [];
+  const machine_name = data.machine_name
+    ? String(data.machine_name).trim()
+    : "";
+  const worker_name = data.worker_name
+    ? String(data.worker_name).trim()
+    : "";
 
-  // ✅ VALID TOOL FILTER (VERY IMPORTANT)
-  const validTools = tools.filter(
+  const toolsRaw = Array.isArray(data.tools) ? data.tools : [];
+
+  // ✅ REMOVE EMPTY TOOL ROWS (VERY IMPORTANT)
+  const tools = toolsRaw.filter(
     (t) =>
       t &&
       t.tool_name &&
@@ -2503,18 +2507,18 @@ exports.createLineOut = (req, res) => {
       Number(t.tool_qty) > 0
   );
 
-  // ✅ VALIDATION (FIXED)
+  // ✅ SIMPLE VALIDATION (NO max:100)
   const v = new Validator(
     {
       work_date,
       machine_name,
       worker_name,
-      tools: validTools
+      tools
     },
     {
       work_date: "required|date",
-      machine_name: "required|string|max:100",
-      worker_name: "required|string|max:100",
+      machine_name: "required",
+      worker_name: "required",
       tools: "required|array|min:1"
     }
   );
@@ -2527,8 +2531,8 @@ exports.createLineOut = (req, res) => {
       return res.json({ status: 0, message: error_message });
     }
 
-    // ✅ PREPARE VALUES
-    const values = validTools.map((t) => [
+    // ✅ INSERT VALUES
+    const values = tools.map((t) => [
       work_date,
       String(t.tool_name).trim(),
       String(t.category_name).trim(),
@@ -2559,13 +2563,15 @@ exports.createLineOut = (req, res) => {
 };
 
 
-
-
 exports.updateLineOut = (req, res) => {
   const data = req.body;
 
-  const tool_name = data.tool_name?.toString().trim();
-  const category_name = data.category_name?.toString().trim();
+  const tool_name = data.tool_name
+    ? String(data.tool_name).trim()
+    : "";
+  const category_name = data.category_name
+    ? String(data.category_name).trim()
+    : "";
   const tool_qty = Number(data.tool_qty);
 
   const v = new Validator(
@@ -2577,8 +2583,8 @@ exports.updateLineOut = (req, res) => {
     },
     {
       id: "required|integer",
-      tool_name: "required|string|max:100",
-      category_name: "required|string|max:100",
+      tool_name: "required",
+      category_name: "required",
       tool_qty: "required|integer|min:1"
     }
   );
@@ -2626,8 +2632,6 @@ exports.updateLineOut = (req, res) => {
 
 
 
-
-
 exports.completeLineOut = (req, res) => {
   const work_date = req.body.work_date;
 
@@ -2642,13 +2646,15 @@ exports.completeLineOut = (req, res) => {
   `;
 
   db.mainDb(getQuery, [work_date], (err, rows) => {
-    if (err) return res.json({ status: 0, message: "Fetch error" });
+    if (err) {
+      return res.json({ status: 0, message: "Fetch error" });
+    }
 
     if (!rows.length) {
       return res.json({ status: 0, message: "No pending records" });
     }
 
-    // ✅ UPDATE STOCK SAFELY
+    // ✅ UPDATE STOCK
     rows.forEach((item) => {
       db.mainDb(
         `UPDATE tool_current_stock 
@@ -2675,7 +2681,6 @@ exports.completeLineOut = (req, res) => {
     );
   });
 };
-
 
 
 
