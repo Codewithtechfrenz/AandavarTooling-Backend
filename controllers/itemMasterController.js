@@ -2482,32 +2482,59 @@ exports.deleteInvoice = (req, res) => {
 
 
 
-
 exports.createLineOut = (req, res) => {
   const data = req.body;
 
-  const v = new Validator(data, {
-    work_date: "required|date",
-    machine_name: "required|string|max:100",
-    worker_name: "required|string|max:100",
-    tools: "required|array|min:1"
-  });
+  // ✅ SAFE CLEANING
+  const work_date = data.work_date;
+  const machine_name = data.machine_name?.toString().trim();
+  const worker_name = data.worker_name?.toString().trim();
+  const tools = Array.isArray(data.tools) ? data.tools : [];
+
+  // ✅ VALID TOOL FILTER (VERY IMPORTANT)
+  const validTools = tools.filter(
+    (t) =>
+      t &&
+      t.tool_name &&
+      t.category_name &&
+      t.tool_qty &&
+      String(t.tool_name).trim() !== "" &&
+      String(t.category_name).trim() !== "" &&
+      Number(t.tool_qty) > 0
+  );
+
+  // ✅ VALIDATION (FIXED)
+  const v = new Validator(
+    {
+      work_date,
+      machine_name,
+      worker_name,
+      tools: validTools
+    },
+    {
+      work_date: "required|date",
+      machine_name: "required|string|max:100",
+      worker_name: "required|string|max:100",
+      tools: "required|array|min:1"
+    }
+  );
 
   v.check().then((matched) => {
     if (!matched) {
       const error_message = Object.values(v.errors)
-        .map(e => e.message)
+        .map((e) => e.message)
         .join(", ");
       return res.json({ status: 0, message: error_message });
     }
 
-    const values = data.tools.map((t) => [
-      data.work_date,
-      t.tool_name,
-      t.category_name || null,
+    // ✅ PREPARE VALUES
+    const values = validTools.map((t) => [
+      work_date,
+      String(t.tool_name).trim(),
+      String(t.category_name).trim(),
       Number(t.tool_qty),
-      data.machine_name,
-      data.worker_name,
+      machine_name,
+      worker_name,
       "Pending"
     ]);
 
@@ -2534,22 +2561,32 @@ exports.createLineOut = (req, res) => {
 
 
 
-
-
 exports.updateLineOut = (req, res) => {
   const data = req.body;
 
-  const v = new Validator(data, {
-    id: "required|integer",
-    tool_name: "required|string|max:100",
-    category_name: "required|string|max:100",
-    tool_qty: "required|integer|min:1"
-  });
+  const tool_name = data.tool_name?.toString().trim();
+  const category_name = data.category_name?.toString().trim();
+  const tool_qty = Number(data.tool_qty);
+
+  const v = new Validator(
+    {
+      id: data.id,
+      tool_name,
+      category_name,
+      tool_qty
+    },
+    {
+      id: "required|integer",
+      tool_name: "required|string|max:100",
+      category_name: "required|string|max:100",
+      tool_qty: "required|integer|min:1"
+    }
+  );
 
   v.check().then((matched) => {
     if (!matched) {
       const error_message = Object.values(v.errors)
-        .map(e => e.message)
+        .map((e) => e.message)
         .join(", ");
       return res.json({ status: 0, message: error_message });
     }
@@ -2562,7 +2599,7 @@ exports.updateLineOut = (req, res) => {
 
     db.mainDb(
       query,
-      [data.tool_name, data.category_name, data.tool_qty, data.id],
+      [tool_name, category_name, tool_qty, data.id],
       (err, result) => {
         if (err) {
           console.log(err);
@@ -2589,8 +2626,10 @@ exports.updateLineOut = (req, res) => {
 
 
 
+
+
 exports.completeLineOut = (req, res) => {
-  const { work_date } = req.body;
+  const work_date = req.body.work_date;
 
   if (!work_date) {
     return res.json({ status: 0, message: "Date required" });
@@ -2603,8 +2642,13 @@ exports.completeLineOut = (req, res) => {
   `;
 
   db.mainDb(getQuery, [work_date], (err, rows) => {
-    if (err) return res.json({ status: 0 });
+    if (err) return res.json({ status: 0, message: "Fetch error" });
 
+    if (!rows.length) {
+      return res.json({ status: 0, message: "No pending records" });
+    }
+
+    // ✅ UPDATE STOCK SAFELY
     rows.forEach((item) => {
       db.mainDb(
         `UPDATE tool_current_stock 
@@ -2618,7 +2662,11 @@ exports.completeLineOut = (req, res) => {
     db.mainDb(
       `UPDATE line_out SET status='Completed' WHERE work_date=?`,
       [work_date],
-      () => {
+      (err2) => {
+        if (err2) {
+          return res.json({ status: 0, message: "Update failed" });
+        }
+
         return res.json({
           status: 1,
           message: "Completed & Stock Updated"
@@ -2632,7 +2680,6 @@ exports.completeLineOut = (req, res) => {
 
 
 exports.getLineOutList = (req, res) => {
-
   const query = `
     SELECT 
       id,
