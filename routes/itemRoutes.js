@@ -160,6 +160,7 @@ router.get('/dashboards', itemController.getDashboardData);
 
 router.post("/addsales", itemController.addSale);
 router.get("/invoice/:invoiceNo", itemController.getInvoiceDetails);
+router.post("/deleteinvoice", itemController.deleteInvoice);
 
 
 

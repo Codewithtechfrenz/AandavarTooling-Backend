@@ -2406,7 +2406,32 @@ exports.getInvoiceDetails = (req, res) => {
     });
 };
 
+// DELETE INVOICE BY INVOICE NO
+exports.deleteInvoice = (req, res) => {
+  const { invoice_no } = req.body;
 
+  if (!invoice_no) {
+    return res.json({ status: 0, message: "Invoice No required" });
+  }
+
+  const query = `DELETE FROM sales_invoice WHERE Invoice_No = ?`;
+
+  db.mainDb(query, [invoice_no], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.json({ status: 0, message: "Delete failed" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.json({ status: 0, message: "Invoice not found" });
+    }
+
+    return res.json({
+      status: 1,
+      message: "Invoice deleted successfully"
+    });
+  });
+};
 
 
 // CREATE MULTIPLE TOOLS FOR ONE WO
