@@ -2417,7 +2417,7 @@ exports.createLineOut = (req, res) => {
     work_order_no: "required|string|max:50",
     machine_name: "required|string|max:100",
     worker_name: "required|string|max:100",
-    tools: "required|array"
+    tools: "required|array|min:1"
   });
 
   v.check().then((matched) => {
@@ -2428,19 +2428,20 @@ exports.createLineOut = (req, res) => {
       return res.json({ status: 0, message: error_message });
     }
 
-    // ✅ Prepare multiple rows
+    // ✅ map tools → DB rows
     const values = data.tools.map((t) => [
       data.work_order_no,
-      t.tool_name,
-      t.category_name,
-      t.tool_qty,
+      t.tool_name,         // ✅ matches DB column
+      t.category_name || null,
+      Number(t.tool_qty),
       data.machine_name,
-      data.worker_name
+      data.worker_name,
+      "Pending"
     ]);
 
     const query = `
       INSERT INTO line_out
-      (work_order_no, tool_name, category_name, tool_qty, machine_name, worker_name)
+      (work_order_no, tool_name, category_name, tool_qty, machine_name, worker_name, status)
       VALUES ?
     `;
 
@@ -2452,12 +2453,11 @@ exports.createLineOut = (req, res) => {
 
       return res.json({
         status: 1,
-        message: "Work Order created with multiple tools"
+        message: "Work Order created successfully"
       });
     });
   });
 };
-
 
 
 
@@ -2482,17 +2482,12 @@ exports.updateLineOut = (req, res) => {
     const query = `
       UPDATE line_out 
       SET tool_name=?, category_name=?, tool_qty=? 
-      WHERE id=?
+      WHERE id=? AND status='Pending'
     `;
 
     db.mainDb(
       query,
-      [
-        data.tool_name,
-        data.category_name,
-        data.tool_qty,
-        data.id
-      ],
+      [data.tool_name, data.category_name, data.tool_qty, data.id],
       (err, result) => {
         if (err) {
           console.log(err);
@@ -2500,7 +2495,10 @@ exports.updateLineOut = (req, res) => {
         }
 
         if (result.affectedRows === 0) {
-          return res.json({ status: 0, message: "Record not found" });
+          return res.json({
+            status: 0,
+            message: "Record not found or already completed"
+          });
         }
 
         return res.json({
@@ -2516,7 +2514,7 @@ exports.updateLineOut = (req, res) => {
 
 
 exports.completeLineOut = (req, res) => {
-  const work_order_no = req.body.work_order_no;
+  const { work_order_no } = req.body;
 
   if (!work_order_no) {
     return res.json({ status: 0, message: "Work order required" });
@@ -2554,6 +2552,11 @@ exports.completeLineOut = (req, res) => {
   });
 };
 
+
+
+
+
+
 exports.getLineOutList = (req, res) => {
 
   const query = `
@@ -2574,10 +2577,7 @@ exports.getLineOutList = (req, res) => {
   db.mainDb(query, [], (err, result) => {
     if (err) {
       console.log(err);
-      return res.json({
-        status: 0,
-        message: "DB Error"
-      });
+      return res.json({ status: 0, message: "DB Error" });
     }
 
     return res.json({
@@ -2585,5 +2585,4 @@ exports.getLineOutList = (req, res) => {
       data: result
     });
   });
-
 };

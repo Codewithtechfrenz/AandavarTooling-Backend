@@ -102,7 +102,7 @@ app.use('/machines', MachineProRouter);
 
 app.use('/currentstock', CurrentStockRouter);
 app.use('/inward', InwardRouter);
-app.use('/linefeedouts', LineFeedOutRouter);
+//app.use('/linefeedouts', LineFeedOutRouter);
 app.use('/linefeedin', LineFeedInRouter);
 app.use('/activecategories', ActivecategoryRouter);
 app.use('/activeuoms', activeuomRouter);

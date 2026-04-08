@@ -173,6 +173,6 @@ router.post("/updateworkorder", itemController.updateLineOut);
 router.post("/completeworkorder", itemController.completeLineOut);
 
 // LIST
-router.get("/list", itemController.getLineOutList);
+router.get("/getlist", itemController.getLineOutList);
 
 module.exports = router;
