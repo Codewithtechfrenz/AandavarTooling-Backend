@@ -2479,86 +2479,47 @@ exports.deleteInvoice = (req, res) => {
 };
 
 
-
-
 exports.createLineOut = (req, res) => {
   const data = req.body;
-
-  // ✅ CLEAN INPUTS
   const work_date = data.work_date;
-  const machine_name = data.machine_name
-    ? String(data.machine_name).trim()
-    : "";
-  const worker_name = data.worker_name
-    ? String(data.worker_name).trim()
-    : "";
-
+  const machine_name = data.machine_name || "";
+  const worker_name = data.worker_name || "";
   const toolsRaw = Array.isArray(data.tools) ? data.tools : [];
 
-  // ✅ REMOVE EMPTY TOOL ROWS (VERY IMPORTANT)
-  const tools = toolsRaw.filter(
-    (t) =>
-      t &&
-      t.tool_name &&
-      t.category_name &&
-      t.tool_qty &&
-      String(t.tool_name).trim() !== "" &&
-      String(t.category_name).trim() !== "" &&
-      Number(t.tool_qty) > 0
-  );
+  if (!work_date || !machine_name || !worker_name) {
+    return res.json({ status: 0, message: "Please fill date, machine, and worker" });
+  }
 
-  // ✅ SIMPLE VALIDATION (NO max:100)
-  const v = new Validator(
-    {
-      work_date,
-      machine_name,
-      worker_name,
-      tools
-    },
-    {
-      work_date: "required|date",
-      machine_name: "required",
-      worker_name: "required",
-      tools: "required|array|min:1"
-    }
-  );
+  if (!toolsRaw.length) {
+    return res.json({ status: 0, message: "Please add at least one tool" });
+  }
 
-  v.check().then((matched) => {
-    if (!matched) {
-      const error_message = Object.values(v.errors)
-        .map((e) => e.message)
-        .join(", ");
-      return res.json({ status: 0, message: error_message });
-    }
+  const tools = toolsRaw
+    .map(t => ({
+      tool_name: t.tool_name || "",
+      category_name: t.category_name || "",
+      tool_qty: Number(t.tool_qty) || 0
+    }))
+    .filter(t => t.tool_name && t.category_name && t.tool_qty > 0);
 
-    // ✅ INSERT VALUES
-    const values = tools.map((t) => [
-      work_date,
-      String(t.tool_name).trim(),
-      String(t.category_name).trim(),
-      Number(t.tool_qty),
-      machine_name,
-      worker_name,
-      "Pending"
-    ]);
+  if (!tools.length) {
+    return res.json({ status: 0, message: "Please fill tool name, category, and qty" });
+  }
 
-    const query = `
-      INSERT INTO line_out
-      (work_date, tool_name, category_name, tool_qty, machine_name, worker_name, status)
-      VALUES ?
-    `;
+  const values = tools.map(t => [
+    work_date, t.tool_name, t.category_name, t.tool_qty, machine_name, worker_name, "Pending"
+  ]);
 
-    db.mainDb(query, [values], (err) => {
-      if (err) {
-        console.log(err);
-        return res.json({ status: 0, message: "Insert failed" });
-      }
+  const query = `
+    INSERT INTO line_out
+    (work_date, tool_name, category_name, tool_qty, machine_name, worker_name, status)
+    VALUES ?
+  `;
 
-      return res.json({
-        status: 1,
-        message: "Work Entry created successfully"
-      });
-    });
+  db.mainDb(query, [values], (err) => {
+    if (err) return res.json({ status: 0, message: "Insert failed" });
+
+    return res.json({ status: 1, message: "Work Entry created successfully" });
   });
 };
 
