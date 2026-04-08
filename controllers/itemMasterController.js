@@ -1908,6 +1908,62 @@ exports.deleteDeliveryChallan = (req, res) => {
 
 
 
+
+
+
+
+// DELETE DELIVERY CHALLAN
+exports.deleteChallan = (req, res) => {
+  const { challan_no } = req.body;
+
+  if (!challan_no) {
+    return res.json({ status: 0, message: "Challan No required" });
+  }
+
+  // ⚠️ If you have child table → delete that first
+  db.mainDb(
+    "DELETE FROM delivery_challan_items WHERE DeliveryChallanNo = ?",
+    [challan_no],
+    (err) => {
+      if (err) {
+        console.log(err);
+        return res.json({ status: 0, message: "Delete failed (items)" });
+      }
+
+      db.mainDb(
+        "DELETE FROM delivery_challan WHERE DeliveryChallanNo = ?",
+        [challan_no],
+        (err2, result) => {
+          if (err2) {
+            console.log(err2);
+            return res.json({ status: 0, message: "Delete failed" });
+          }
+
+          if (result.affectedRows === 0) {
+            return res.json({ status: 0, message: "Challan not found" });
+          }
+
+          return res.json({
+            status: 1,
+            message: "Challan deleted successfully"
+          });
+        }
+      );
+    }
+  );
+};
+
+
+
+
+
+
+
+
+
+
+
+
 exports.getChallanByNumber = (req, res) => {
     const { challanNo } = req.params;
 

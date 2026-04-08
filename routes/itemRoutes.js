@@ -108,6 +108,11 @@ router.post('/deleteDeliveryChallan', itemController.deleteDeliveryChallan);
 router.get("/getDeliveryChallanHistory", itemController.getDeliveryChallanHistory);
 router.get("/getChallanByNumber/:challanNo", itemController.getChallanByNumber);
 
+//delete challan
+router.post("/deleteChallan", itemController.deleteChallan);
+
+
+
 
 //return delivery challan
 router.post("/createReturnDeliveryChallan", itemController.createReturnDeliveryChallan);
