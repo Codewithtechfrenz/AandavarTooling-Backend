@@ -2479,12 +2479,15 @@ exports.deleteInvoice = (req, res) => {
 };
 
 
-// CREATE MULTIPLE TOOLS FOR ONE WO
+
+
+
+
 exports.createLineOut = (req, res) => {
   const data = req.body;
 
   const v = new Validator(data, {
-    work_order_no: "required|string|max:50",
+    work_date: "required|date",
     machine_name: "required|string|max:100",
     worker_name: "required|string|max:100",
     tools: "required|array|min:1"
@@ -2498,10 +2501,9 @@ exports.createLineOut = (req, res) => {
       return res.json({ status: 0, message: error_message });
     }
 
-    // ✅ map tools → DB rows
     const values = data.tools.map((t) => [
-      data.work_order_no,
-      t.tool_name,         // ✅ matches DB column
+      data.work_date,
+      t.tool_name,
       t.category_name || null,
       Number(t.tool_qty),
       data.machine_name,
@@ -2511,7 +2513,7 @@ exports.createLineOut = (req, res) => {
 
     const query = `
       INSERT INTO line_out
-      (work_order_no, tool_name, category_name, tool_qty, machine_name, worker_name, status)
+      (work_date, tool_name, category_name, tool_qty, machine_name, worker_name, status)
       VALUES ?
     `;
 
@@ -2523,11 +2525,14 @@ exports.createLineOut = (req, res) => {
 
       return res.json({
         status: 1,
-        message: "Work Order created successfully"
+        message: "Work Entry created successfully"
       });
     });
   });
 };
+
+
+
 
 
 
@@ -2583,20 +2588,21 @@ exports.updateLineOut = (req, res) => {
 
 
 
-exports.completeLineOut = (req, res) => {
-  const { work_order_no } = req.body;
 
-  if (!work_order_no) {
-    return res.json({ status: 0, message: "Work order required" });
+exports.completeLineOut = (req, res) => {
+  const { work_date } = req.body;
+
+  if (!work_date) {
+    return res.json({ status: 0, message: "Date required" });
   }
 
   const getQuery = `
     SELECT tool_name, tool_qty 
     FROM line_out 
-    WHERE work_order_no=? AND status='Pending'
+    WHERE work_date=? AND status='Pending'
   `;
 
-  db.mainDb(getQuery, [work_order_no], (err, rows) => {
+  db.mainDb(getQuery, [work_date], (err, rows) => {
     if (err) return res.json({ status: 0 });
 
     rows.forEach((item) => {
@@ -2610,12 +2616,12 @@ exports.completeLineOut = (req, res) => {
     });
 
     db.mainDb(
-      `UPDATE line_out SET status='Completed' WHERE work_order_no=?`,
-      [work_order_no],
+      `UPDATE line_out SET status='Completed' WHERE work_date=?`,
+      [work_date],
       () => {
         return res.json({
           status: 1,
-          message: "WO Completed & Stock Updated"
+          message: "Completed & Stock Updated"
         });
       }
     );
@@ -2625,21 +2631,18 @@ exports.completeLineOut = (req, res) => {
 
 
 
-
-
 exports.getLineOutList = (req, res) => {
 
   const query = `
     SELECT 
       id,
-      work_order_no,
+      DATE_FORMAT(work_date, '%d-%m-%Y') as work_date,
       tool_name,
       category_name,
       tool_qty,
       machine_name,
       worker_name,
-      status,
-      DATE_FORMAT(created_at, '%d-%m-%Y %H:%i') as created_at
+      status
     FROM line_out
     ORDER BY id DESC
   `;
