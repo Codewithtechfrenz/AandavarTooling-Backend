@@ -2490,7 +2490,7 @@ exports.deleteInvoice = (req, res) => {
 
 
 
-const db = require("../db");
+
 
 // ================= CREATE =================
 exports.createWorkOrder = (req, res) => {
