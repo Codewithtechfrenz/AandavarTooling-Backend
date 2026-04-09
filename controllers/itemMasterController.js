@@ -2561,7 +2561,7 @@ exports.createWorkOrder = (req, res) => {
 
         // 🔹 Step 3: Reduce Stock
         const updateStockQuery = `
-          UPDATE currentstock
+          UPDATE tool_current_stock
           SET AvailableQty = AvailableQty - ?
           WHERE ItemName = ?
         `;
