@@ -2503,28 +2503,83 @@ exports.createWorkOrder = (req, res) => {
     tool_qty,
   } = req.body;
 
-  if (!work_date || !machine_name || !worker_name || !tool_name || !category_name || !tool_qty) {
+  if (
+    !work_date ||
+    !machine_name ||
+    !worker_name ||
+    !tool_name ||
+    !category_name ||
+    tool_qty === "" || tool_qty === null
+  ) {
     return res.json({ status: 0, message: "All fields are required" });
   }
 
-  const query = `
-    INSERT INTO workorder
-    (work_date, machine_name, worker_name, tool_name, category_name, tool_qty)
-    VALUES (?, ?, ?, ?, ?, ?)
+  const qty = Number(tool_qty);
+
+  // 🔹 Step 1: Check Stock
+  const checkStockQuery = `
+    SELECT AvailableQty 
+    FROM currentstock 
+    WHERE ItemName = ?
   `;
 
-  db.mainDb(
-    query,
-    [work_date, machine_name, worker_name, tool_name, category_name, Number(tool_qty)],
-    (err, result) => {
-      if (err) {
-        console.log("INSERT ERROR:", err);
-        return res.json({ status: 0, message: err.sqlMessage });
-      }
-
-      res.json({ status: 1, message: "Saved Successfully" });
+  db.mainDb(checkStockQuery, [tool_name], (err, stockResult) => {
+    if (err) {
+      console.log(err);
+      return res.json({ status: 0, message: err.sqlMessage });
     }
-  );
+
+    if (stockResult.length === 0) {
+      return res.json({ status: 0, message: "Tool not found in stock" });
+    }
+
+    const availableQty = stockResult[0].AvailableQty;
+
+    // ❌ Not enough stock
+    if (availableQty < qty) {
+      return res.json({
+        status: 0,
+        message: `Only ${availableQty} items available in stock`,
+      });
+    }
+
+    // 🔹 Step 2: Insert WorkOrder
+    const insertQuery = `
+      INSERT INTO workorder
+      (work_date, machine_name, worker_name, tool_name, category_name, tool_qty)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    db.mainDb(
+      insertQuery,
+      [work_date, machine_name, worker_name, tool_name, category_name, qty],
+      (err) => {
+        if (err) {
+          console.log(err);
+          return res.json({ status: 0, message: err.sqlMessage });
+        }
+
+        // 🔹 Step 3: Reduce Stock
+        const updateStockQuery = `
+          UPDATE currentstock
+          SET AvailableQty = AvailableQty - ?
+          WHERE ItemName = ?
+        `;
+
+        db.mainDb(updateStockQuery, [qty, tool_name], (err) => {
+          if (err) {
+            console.log(err);
+            return res.json({ status: 0, message: err.sqlMessage });
+          }
+
+          res.json({
+            status: 1,
+            message: "Saved & Stock Updated Successfully",
+          });
+        });
+      }
+    );
+  });
 };
 
 
