@@ -169,16 +169,11 @@ router.post("/deleteinvoice", itemController.deleteInvoice);
 
 
 
-// CREATE
-router.post("/createworkorder", itemController.createWorkOrder);
-
-// UPDATE
-router.post("/updateworkorder", itemController.updateWorkOrder);
-
-// DELETE
-router.post("/deleteworkorder", itemController.deleteWorkOrder);
-
-// LIST
+// routes
 router.get("/getlist", itemController.getWorkOrders);
+router.post("/createworkorder", itemController.createWorkOrder);
+router.post("/updateworkorder", itemController.updateWorkOrder);
+router.post("/deleteworkorder", itemController.deleteWorkOrder);
+router.put("/completeworkorder", itemController.completeWorkOrder);
 
 module.exports = router;

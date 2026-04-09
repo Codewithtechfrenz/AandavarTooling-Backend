@@ -2480,68 +2480,127 @@ exports.deleteInvoice = (req, res) => {
 
 
 
-// CREATE
-exports.createWorkOrder = (req, res) => {
-  const { work_date, machine_name, worker_name, tools } = req.body;
 
-  if (!tools || tools.length === 0) {
-    return res.json({ status: 0, message: "At least one tool required" });
-  }
 
-  const values = tools.map(t => [
-    work_date,
-    machine_name,
-    worker_name,
-    t.tool_name,
-    t.category_name,
-    t.tool_qty
-  ]);
 
-  const sql = `
-    INSERT INTO work_orders 
-    (work_date, machine_name, worker_name, tool_name, category_name, tool_qty)
-    VALUES ?
-  `;
 
-  db.query(sql, [values], (err) => {
-    if (err) {
-      console.error(err);
-      return res.json({ status: 0, message: "DB Error" });
-    }
-    res.json({ status: 1, message: "Created Successfully" });
-  });
-};
 
-// GET
+
+
+
+// ================= GET LIST =================
 exports.getWorkOrders = (req, res) => {
-  db.query("SELECT * FROM work_orders ORDER BY id DESC", (err, result) => {
-    if (err) return res.json({ status: 0, data: [] });
+  const sql = "SELECT * FROM workorder ORDER BY id DESC";
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      return res.json({ status: 0, message: "Error fetching data" });
+    }
     res.json({ status: 1, data: result });
   });
 };
 
-// UPDATE
-exports.updateWorkOrder = (req, res) => {
-  const { id, tool_name, category_name, tool_qty } = req.body;
+
+// ================= CREATE =================
+exports.createWorkOrder = (req, res) => {
+  const {
+    work_date,
+    machine_name,
+    worker_name,
+    tool_name,
+    category_name,
+    tool_qty,
+  } = req.body;
 
   const sql = `
-    UPDATE work_orders 
-    SET tool_name=?, category_name=?, tool_qty=? 
-    WHERE id=?
+    INSERT INTO workorder
+    (work_date, machine_name, worker_name, tool_name, category_name, tool_qty)
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [tool_name, category_name, tool_qty, id], (err) => {
-    if (err) return res.json({ status: 0, message: "Update failed" });
-    res.json({ status: 1, message: "Updated Successfully" });
-  });
+  db.query(
+    sql,
+    [work_date, machine_name, worker_name, tool_name, category_name, tool_qty],
+    (err) => {
+      if (err) {
+        console.error(err);
+        return res.json({ status: 0, message: "Insert failed" });
+      }
+
+      res.json({ status: 1, message: "Saved Successfully" });
+    }
+  );
 };
 
-// DELETE
+
+// ================= UPDATE =================
+exports.updateWorkOrder = (req, res) => {
+  const {
+    id,
+    work_date,
+    machine_name,
+    worker_name,
+    tool_name,
+    category_name,
+    tool_qty,
+  } = req.body;
+
+  const sql = `
+    UPDATE workorder SET
+      work_date = ?,
+      machine_name = ?,
+      worker_name = ?,
+      tool_name = ?,
+      category_name = ?,
+      tool_qty = ?
+    WHERE id = ?
+  `;
+
+  db.query(
+    sql,
+    [work_date, machine_name, worker_name, tool_name, category_name, tool_qty, id],
+    (err) => {
+      if (err) {
+        return res.json({ status: 0, message: "Update failed" });
+      }
+
+      res.json({ status: 1, message: "Updated Successfully" });
+    }
+  );
+};
+
+
+// ================= DELETE =================
 exports.deleteWorkOrder = (req, res) => {
   const { id } = req.body;
 
-  db.query("DELETE FROM work_orders WHERE id=?", [id], (err) => {
-    if (err) return res.json({ status: 0, message: "Delete failed" });
+  const sql = "DELETE FROM workorder WHERE id = ?";
+
+  db.query(sql, [id], (err) => {
+    if (err) {
+      return res.json({ status: 0, message: "Delete failed" });
+    }
+
     res.json({ status: 1, message: "Deleted Successfully" });
+  });
+};
+
+
+// ================= COMPLETE =================
+exports.completeWorkOrder = (req, res) => {
+  const { id } = req.body;
+
+  const sql = `
+    UPDATE workorder
+    SET status = 'Completed'
+    WHERE id = ?
+  `;
+
+  db.query(sql, [id], (err) => {
+    if (err) {
+      return res.json({ status: 0, message: "Complete failed" });
+    }
+
+    res.json({ status: 1, message: "Completed Successfully" });
   });
 };
