@@ -2490,67 +2490,112 @@ exports.deleteInvoice = (req, res) => {
 
 
 
-// CREATE WORK ORDER
+const db = require("../db");
+
+// ================= CREATE =================
 exports.createWorkOrder = (req, res) => {
-  const { work_date, machine_name, worker_name, tool_name, category_name, tool_qty } = req.body;
+  const {
+    work_date,
+    machine_name,
+    worker_name,
+    tool_name,
+    category_name,
+    tool_qty,
+  } = req.body;
 
   if (!work_date || !machine_name || !worker_name || !tool_name || !category_name || !tool_qty) {
     return res.json({ status: 0, message: "All fields are required" });
   }
 
-  const sql = `
+  const query = `
     INSERT INTO workorder
     (work_date, machine_name, worker_name, tool_name, category_name, tool_qty)
     VALUES (?, ?, ?, ?, ?, ?)
   `;
 
-  db.query(
-    sql,
+  db.mainDb(
+    query,
     [work_date, machine_name, worker_name, tool_name, category_name, Number(tool_qty)],
-    (err) => {
+    (err, result) => {
       if (err) {
-        console.error("MySQL Error:", err);
-        return res.json({ status: 0, message: "Insert failed: " + err.sqlMessage });
+        console.log("INSERT ERROR:", err);
+        return res.json({ status: 0, message: err.sqlMessage });
       }
+
       res.json({ status: 1, message: "Saved Successfully" });
     }
   );
 };
 
-// GET LIST
+
+// ================= GET LIST =================
 exports.getList = (req, res) => {
-  const sql = "SELECT * FROM workorder ORDER BY work_date DESC";
-  db.query(sql, (err, results) => {
-    if (err) return res.json({ status: 0, message: err.sqlMessage });
-    res.json({ status: 1, data: results });
+  const query = "SELECT * FROM workorder ORDER BY id DESC";
+
+  db.mainDb(query, (err, result) => {
+    if (err) {
+      console.log("FETCH ERROR:", err);
+      return res.json({ status: 0 });
+    }
+
+    res.json({ status: 1, data: result });
   });
 };
 
-// UPDATE WORK ORDER
-exports.updateWorkOrder = (req, res) => {
-  const { id, work_date, machine_name, worker_name, tool_name, category_name, tool_qty } = req.body;
-  if (!id) return res.json({ status: 0, message: "ID is required" });
 
-  const sql = `
+// ================= UPDATE =================
+exports.updateWorkOrder = (req, res) => {
+  const {
+    id,
+    work_date,
+    machine_name,
+    worker_name,
+    tool_name,
+    category_name,
+    tool_qty,
+  } = req.body;
+
+  if (!id) {
+    return res.json({ status: 0, message: "ID is required" });
+  }
+
+  const query = `
     UPDATE workorder
     SET work_date=?, machine_name=?, worker_name=?, tool_name=?, category_name=?, tool_qty=?
     WHERE id=?
   `;
 
-  db.query(sql, [work_date, machine_name, worker_name, tool_name, category_name, Number(tool_qty), id], (err) => {
-    if (err) return res.json({ status: 0, message: err.sqlMessage });
-    res.json({ status: 1, message: "Updated Successfully" });
-  });
+  db.mainDb(
+    query,
+    [work_date, machine_name, worker_name, tool_name, category_name, Number(tool_qty), id],
+    (err, result) => {
+      if (err) {
+        console.log("UPDATE ERROR:", err);
+        return res.json({ status: 0, message: err.sqlMessage });
+      }
+
+      res.json({ status: 1, message: "Updated Successfully" });
+    }
+  );
 };
 
-// DELETE WORK ORDER
+
+// ================= DELETE =================
 exports.deleteWorkOrder = (req, res) => {
   const { id } = req.body;
-  if (!id) return res.json({ status: 0, message: "ID is required" });
 
-  const sql = "DELETE FROM workorder WHERE id=?";
-  db.query(sql, [id], (err) => {
-    if (err) return res.json({ status: 0, message: err.sqlMessage });
+  if (!id) {
+    return res.json({ status: 0, message: "ID is required" });
+  }
+
+  const query = "DELETE FROM workorder WHERE id=?";
+
+  db.mainDb(query, [id], (err, result) => {
+    if (err) {
+      console.log("DELETE ERROR:", err);
+      return res.json({ status: 0, message: err.sqlMessage });
+    }
+
     res.json({ status: 1, message: "Deleted Successfully" });
   });
 };
