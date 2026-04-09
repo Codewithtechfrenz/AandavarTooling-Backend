@@ -2652,3 +2652,32 @@ exports.deleteWorkOrder = (req, res) => {
     res.json({ status: 1, message: "Deleted Successfully" });
   });
 };
+
+
+exports.getWorkOrderHistory = (req, res) => {
+  const { from_date, to_date, worker_name } = req.query;
+
+  let query = `SELECT * FROM workorder WHERE 1=1`;
+  let params = [];
+
+  if (from_date && to_date) {
+    query += " AND work_date BETWEEN ? AND ?";
+    params.push(from_date, to_date);
+  }
+
+  if (worker_name) {
+    query += " AND worker_name = ?";
+    params.push(worker_name);
+  }
+
+  query += " ORDER BY id DESC";
+
+  db.mainDb(query, params, (err, result) => {
+    if (err) {
+      console.log("HISTORY ERROR:", err);
+      return res.json({ status: 0 });
+    }
+
+    res.json({ status: 1, data: result });
+  });
+};

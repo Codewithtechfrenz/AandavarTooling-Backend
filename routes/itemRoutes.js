@@ -174,4 +174,9 @@ router.get("/getlist", itemController.getList);
 router.post("/updateworkorder", itemController.updateWorkOrder);
 router.post("/deleteworkorder", itemController.deleteWorkOrder);
 
+
+
+
+router.get("/workorderhistory", itemController.getWorkOrderHistory);
+
 module.exports = router;
