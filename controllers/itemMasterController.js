@@ -2491,8 +2491,6 @@ exports.deleteInvoice = (req, res) => {
 
 
 
-
-// ================= CREATE =================
 exports.createWorkOrder = (req, res) => {
   const {
     work_date,
@@ -2519,13 +2517,13 @@ exports.createWorkOrder = (req, res) => {
   // 🔹 Step 1: Check Stock
   const checkStockQuery = `
     SELECT AvailableQty 
-    FROM currentstock 
-    WHERE ItemName = ?
+    FROM tool_current_stock 
+    WHERE ToolName = ?
   `;
 
   db.mainDb(checkStockQuery, [tool_name], (err, stockResult) => {
     if (err) {
-      console.log(err);
+      console.log("STOCK CHECK ERROR:", err);
       return res.json({ status: 0, message: err.sqlMessage });
     }
 
@@ -2539,7 +2537,7 @@ exports.createWorkOrder = (req, res) => {
     if (availableQty < qty) {
       return res.json({
         status: 0,
-        message: `Only ${availableQty} items available in stock`,
+        message: `Only ${availableQty} available in stock`,
       });
     }
 
@@ -2555,7 +2553,7 @@ exports.createWorkOrder = (req, res) => {
       [work_date, machine_name, worker_name, tool_name, category_name, qty],
       (err) => {
         if (err) {
-          console.log(err);
+          console.log("INSERT ERROR:", err);
           return res.json({ status: 0, message: err.sqlMessage });
         }
 
@@ -2563,12 +2561,12 @@ exports.createWorkOrder = (req, res) => {
         const updateStockQuery = `
           UPDATE tool_current_stock
           SET AvailableQty = AvailableQty - ?
-          WHERE ItemName = ?
+          WHERE ToolName = ?
         `;
 
         db.mainDb(updateStockQuery, [qty, tool_name], (err) => {
           if (err) {
-            console.log(err);
+            console.log("STOCK UPDATE ERROR:", err);
             return res.json({ status: 0, message: err.sqlMessage });
           }
 
