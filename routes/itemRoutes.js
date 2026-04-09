@@ -169,11 +169,9 @@ router.post("/deleteinvoice", itemController.deleteInvoice);
 
 
 
-// routes
-router.get("/getlist", itemController.getWorkOrders);
 router.post("/createworkorder", itemController.createWorkOrder);
+router.get("/getlist", itemController.getList);
 router.post("/updateworkorder", itemController.updateWorkOrder);
 router.post("/deleteworkorder", itemController.deleteWorkOrder);
-router.put("/completeworkorder", itemController.completeWorkOrder);
 
 module.exports = router;
