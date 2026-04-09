@@ -2481,101 +2481,185 @@ exports.deleteInvoice = (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// CREATE WORK ORDER
 exports.createLineOut = (req, res) => {
   const data = req.body;
 
+  // ✅ CLEAN INPUTS
   const work_date = data.work_date;
-  const machine_name = data.machine_name || "";
-  const worker_name = data.worker_name || "";
+  const machine_name = data.machine_name
+    ? String(data.machine_name).trim()
+    : "";
+  const worker_name = data.worker_name
+    ? String(data.worker_name).trim()
+    : "";
+
   const toolsRaw = Array.isArray(data.tools) ? data.tools : [];
 
-  if (!work_date || !machine_name || !worker_name) {
-    return res.json({ status: 0, message: "Please fill date, machine, and worker" });
-  }
+  // ✅ REMOVE EMPTY TOOL ROWS (VERY IMPORTANT)
+  const tools = toolsRaw.filter(
+    (t) =>
+      t &&
+      t.tool_name &&
+      t.category_name &&
+      t.tool_qty &&
+      String(t.tool_name).trim() !== "" &&
+      String(t.category_name).trim() !== "" &&
+      Number(t.tool_qty) > 0
+  );
 
-  if (!toolsRaw.length) {
-    return res.json({ status: 0, message: "Please add at least one tool" });
-  }
+  // ✅ SIMPLE VALIDATION (NO max:100)
+  const v = new Validator(
+    {
+      work_date,
+      machine_name,
+      worker_name,
+      tools
+    },
+    {
+      work_date: "required|date",
+      machine_name: "required",
+      worker_name: "required",
+      tools: "required|array|min:1"
+    }
+  );
 
-  const tools = toolsRaw
-    .map(t => ({
-      tool_name: t.tool_name ? String(t.tool_name).trim() : "",
-      category_name: t.category_name ? String(t.category_name).trim() : "",
-      tool_qty: Number(t.tool_qty) || 0
-    }))
-    .filter(t => t.tool_name && t.category_name && t.tool_qty > 0);
-
-  if (!tools.length) {
-    return res.json({ status: 0, message: "Please fill tool name, category, and quantity" });
-  }
-
-  const values = tools.map(t => [
-    work_date, t.tool_name, t.category_name, t.tool_qty, machine_name, worker_name, "Pending"
-  ]);
-
-  const query = `
-    INSERT INTO line_out
-    (work_date, tool_name, category_name, tool_qty, machine_name, worker_name, status)
-    VALUES ?
-  `;
-
-  db.mainDb(query, [values], (err) => {
-    if (err) {
-      console.log("DB ERROR:", err);
-      return res.json({ status: 0, message: "Insert failed: " + err.message });
+  v.check().then((matched) => {
+    if (!matched) {
+      const error_message = Object.values(v.errors)
+        .map((e) => e.message)
+        .join(", ");
+      return res.json({ status: 0, message: error_message });
     }
 
-    return res.json({ status: 1, message: "Work Entry created successfully" });
+    // ✅ INSERT VALUES
+    const values = tools.map((t) => [
+      work_date,
+      String(t.tool_name).trim(),
+      String(t.category_name).trim(),
+      Number(t.tool_qty),
+      machine_name,
+      worker_name,
+      "Pending"
+    ]);
+
+    const query = `
+      INSERT INTO line_out
+      (work_date, tool_name, category_name, tool_qty, machine_name, worker_name, status)
+      VALUES ?
+    `;
+
+    db.mainDb(query, [values], (err) => {
+      if (err) {
+        console.log(err);
+        return res.json({ status: 0, message: "Insert failed" });
+      }
+
+      return res.json({
+        status: 1,
+        message: "Work Entry created successfully"
+      });
+    });
   });
 };
 
-// GET WORK ORDER LIST
-exports.getLineOutList = (req, res) => {
-  const query = `
-    SELECT id,
-      DATE_FORMAT(work_date, '%Y-%m-%d') AS work_date,
-      tool_name, category_name, tool_qty,
-      machine_name, worker_name, status
-    FROM line_out
-    ORDER BY id DESC
-  `;
-  db.mainDb(query, [], (err, result) => {
-    if (err) return res.json({ status: 0, message: err.message });
-    return res.json({ status: 1, data: result });
+
+exports.updateLineOut = (req, res) => {
+  const data = req.body;
+
+  const tool_name = data.tool_name
+    ? String(data.tool_name).trim()
+    : "";
+  const category_name = data.category_name
+    ? String(data.category_name).trim()
+    : "";
+  const tool_qty = Number(data.tool_qty);
+
+  const v = new Validator(
+    {
+      id: data.id,
+      tool_name,
+      category_name,
+      tool_qty
+    },
+    {
+      id: "required|integer",
+      tool_name: "required",
+      category_name: "required",
+      tool_qty: "required|integer|min:1"
+    }
+  );
+
+  v.check().then((matched) => {
+    if (!matched) {
+      const error_message = Object.values(v.errors)
+        .map((e) => e.message)
+        .join(", ");
+      return res.json({ status: 0, message: error_message });
+    }
+
+    const query = `
+      UPDATE line_out 
+      SET tool_name=?, category_name=?, tool_qty=? 
+      WHERE id=? AND status='Pending'
+    `;
+
+    db.mainDb(
+      query,
+      [tool_name, category_name, tool_qty, data.id],
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          return res.json({ status: 0, message: "Update failed" });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.json({
+            status: 0,
+            message: "Record not found or already completed"
+          });
+        }
+
+        return res.json({
+          status: 1,
+          message: "Updated successfully"
+        });
+      }
+    );
   });
 };
 
-// MARK COMPLETE
+
+
+
+
 exports.completeLineOut = (req, res) => {
-  const { work_date } = req.body;
-  if (!work_date) return res.json({ status: 0, message: "Date required" });
+  const work_date = req.body.work_date;
 
-  // Update stock first
-  const getQuery = `SELECT tool_name, tool_qty FROM line_out WHERE work_date=? AND status='Pending'`;
+  if (!work_date) {
+    return res.json({ status: 0, message: "Date required" });
+  }
+
+  const getQuery = `
+    SELECT tool_name, tool_qty 
+    FROM line_out 
+    WHERE work_date=? AND status='Pending'
+  `;
+
   db.mainDb(getQuery, [work_date], (err, rows) => {
-    if (err) return res.json({ status: 0, message: err.message });
+    if (err) {
+      return res.json({ status: 0, message: "Fetch error" });
+    }
 
-    rows.forEach(item => {
+    if (!rows.length) {
+      return res.json({ status: 0, message: "No pending records" });
+    }
+
+    // ✅ UPDATE STOCK
+    rows.forEach((item) => {
       db.mainDb(
-        `UPDATE tool_current_stock SET AvailableQty = AvailableQty - ? WHERE ToolName = ?`,
+        `UPDATE tool_current_stock 
+         SET AvailableQty = AvailableQty - ? 
+         WHERE ToolName = ?`,
         [item.tool_qty, item.tool_name],
         () => {}
       );
@@ -2584,7 +2668,47 @@ exports.completeLineOut = (req, res) => {
     db.mainDb(
       `UPDATE line_out SET status='Completed' WHERE work_date=?`,
       [work_date],
-      () => res.json({ status: 1, message: "Completed & Stock Updated" })
+      (err2) => {
+        if (err2) {
+          return res.json({ status: 0, message: "Update failed" });
+        }
+
+        return res.json({
+          status: 1,
+          message: "Completed & Stock Updated"
+        });
+      }
     );
+  });
+};
+
+
+
+
+exports.getLineOutList = (req, res) => {
+  const query = `
+    SELECT 
+      id,
+      DATE_FORMAT(work_date, '%d-%m-%Y') as work_date,
+      tool_name,
+      category_name,
+      tool_qty,
+      machine_name,
+      worker_name,
+      status
+    FROM line_out
+    ORDER BY id DESC
+  `;
+
+  db.mainDb(query, [], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.json({ status: 0, message: "DB Error" });
+    }
+
+    return res.json({
+      status: 1,
+      data: result
+    });
   });
 };
