@@ -54,7 +54,7 @@ var deliveryRouter = require('./routes/itemRoutes');
 
 var returndeliveryRouter = require('./routes/itemRoutes');
 
-
+var instrumentRouter = require('./routes/itemRoutes');
 var ToolStockRouter = require('./routes/itemRoutes');
 
 var workOrderRouter = require('./routes/itemRoutes');
@@ -136,7 +136,7 @@ app.use('/Toolstock', ToolStockRouter);
 
 app.use('/workorder', workOrderRouter);
 
-
+app.use('/instrument', instrumentRouter);
 
 
 

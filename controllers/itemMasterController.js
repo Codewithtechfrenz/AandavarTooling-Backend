@@ -298,12 +298,155 @@ exports.deleteTool = (req, res) => {
 //------------------------------------------------------------------------------------
 
 
+/* ================= CREATE INSTRUMENT ================= */
+exports.createInstrument = (req, res) => {
+  const data = req.body;
+
+  const query = `
+    INSERT INTO instrument_master 
+    (InstrumentName, InstrumentCode, CategoryName, MinStock, UOMName, Status)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.mainDb(
+    query,
+    [
+      data.InstrumentName || null,
+      data.InstrumentCode || null,
+      data.CategoryName || null,
+      data.MinStock || 0,
+      data.UOMName || null,
+      data.Status || "Active",
+    ],
+    (err, result) => {
+      if (err) {
+        console.log("INSERT ERROR:", err);
+        return res.json({
+          status: 0,
+          message: "Insert failed",
+          error: err.sqlMessage,
+        });
+      }
+
+      return res.json({
+        status: 1,
+        message: "Instrument created successfully",
+        SI: result.insertId,
+      });
+    }
+  );
+};
+
+
+/* ================= GET ALL INSTRUMENTS ================= */
+exports.getInstruments = (req, res) => {
+  const query = `SELECT * FROM instrument_master ORDER BY SI ASC`;
+
+  db.mainDb(query, [], (err, result) => {
+    if (err) {
+      console.log("FETCH ERROR:", err);
+      return res.json({
+        status: 0,
+        message: "Fetch failed",
+      });
+    }
+
+    return res.json({
+      status: 1,
+      data: result,
+    });
+  });
+};
+
+
+/* ================= UPDATE INSTRUMENT ================= */
+exports.updateInstrument = (req, res) => {
+  const data = req.body;
+
+  const query = `
+    UPDATE instrument_master SET
+    InstrumentName = ?,
+    InstrumentCode = ?,
+    CategoryName = ?,
+    MinStock = ?,
+    UOMName = ?,
+    Status = ?
+    WHERE SI = ?
+  `;
+
+  db.mainDb(
+    query,
+    [
+      data.InstrumentName || null,
+      data.InstrumentCode || null,
+      data.CategoryName || null,
+      data.MinStock || 0,
+      data.UOMName || null,
+      data.Status || "Active",
+      data.SI,
+    ],
+    (err, result) => {
+      if (err) {
+        console.log("UPDATE ERROR:", err);
+        return res.json({
+          status: 0,
+          message: "Update failed",
+          error: err.sqlMessage,
+        });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.json({
+          status: 0,
+          message: "Instrument not found",
+        });
+      }
+
+      return res.json({
+        status: 1,
+        message: "Instrument updated successfully",
+      });
+    }
+  );
+};
+
+
+/* ================= DELETE INSTRUMENT ================= */
+exports.deleteInstrument = (req, res) => {
+  const { SI } = req.body;
+
+  const query = `DELETE FROM instrument_master WHERE SI = ?`;
+
+  db.mainDb(query, [SI], (err, result) => {
+    if (err) {
+      console.log("DELETE ERROR:", err);
+      return res.json({
+        status: 0,
+        message: "Delete failed",
+        error: err.sqlMessage,
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.json({
+        status: 0,
+        message: "Instrument not found",
+      });
+    }
+
+    return res.json({
+      status: 1,
+      message: "Instrument deleted successfully",
+    });
+  });
+};
 
 
 
 
 
 
+//------------------------------------------------------------------------------------------
 
 
 

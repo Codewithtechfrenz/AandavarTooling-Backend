@@ -175,6 +175,13 @@ router.post("/updateworkorder", itemController.updateWorkOrder);
 router.post("/deleteworkorder", itemController.deleteWorkOrder);
 
 
+router.post("/createInstrument", itemController.createInstrument);
+router.get("/getInstruments", itemController.getInstruments);
+router.post("/updateInstrument", itemController.updateInstrument);
+router.post("/deleteInstrument", itemController.deleteInstrument);
+
+
+
 
 
 router.get("/workorderhistory", itemController.getWorkOrderHistory);
