@@ -2813,7 +2813,7 @@ exports.getWorkOrderHistory = (req, res) => {
     params.push(worker_name);
   }
 
-  query += " ORDER BY work_date asc";
+  query += " ORDER BY work_date desc";
 
   db.mainDb(query, params, (err, result) => {
     if (err) {
