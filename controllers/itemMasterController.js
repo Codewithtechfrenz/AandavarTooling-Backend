@@ -2726,7 +2726,7 @@ exports.createWorkOrder = (req, res) => {
 
 // ================= GET LIST =================
 exports.getList = (req, res) => {
-  const query = "SELECT * FROM workorder ORDER BY work_date asc";
+  const query = "SELECT * FROM workorder ORDER BY work_date desc";
 
   db.mainDb(query, (err, result) => {
     if (err) {
