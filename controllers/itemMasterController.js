@@ -2487,7 +2487,7 @@ exports.addSale = (req, res) => {
 
 exports.getInvoices = (req, res) => {
     db.mainDb(
-        "SELECT * FROM sales_invoice ORDER BY Invoice_ID DESC",
+        "SELECT * FROM sales_invoice ORDER BY Invoice_Date DESC",
         (err, result) => {
             if (err) return res.json({ status: 0 });
 
