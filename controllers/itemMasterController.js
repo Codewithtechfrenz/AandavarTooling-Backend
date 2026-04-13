@@ -2261,7 +2261,7 @@ exports.createToolInward = (req, res) => {
 
 // Get Tool Current Stock
 exports.getToolCurrentStock = (req, res) => {
-    const query = `SELECT * FROM tool_current_stock ORDER BY ToolName ASC`;
+    const query = `SELECT * FROM tool_current_stock ORDER BY LastUpdated desc`;
     db.mainDb(query, [], (err, result) => {
         if (err) return res.json({ status: 0, message: "DB error", error: err });
         res.json({ status: 1, data: result });
