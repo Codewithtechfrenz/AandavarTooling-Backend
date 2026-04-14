@@ -56,7 +56,7 @@ var returndeliveryRouter = require('./routes/itemRoutes');
 
 var instrumentRouter = require('./routes/itemRoutes');
 var ToolStockRouter = require('./routes/itemRoutes');
-var authRouter = require('./routes/itemRoutes');
+
 
 var workOrderRouter = require('./routes/itemRoutes');
 const { version } = require('os');
@@ -139,7 +139,7 @@ app.use('/workorder', workOrderRouter);
 
 app.use('/instrument', instrumentRouter);
 
-app.use('/auth', authRouter);
+
 
 // ================== HEALTH CHECK ==================
 app.get('/', (req, res) => {
