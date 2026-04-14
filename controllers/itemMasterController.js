@@ -2824,3 +2824,66 @@ exports.getWorkOrderHistory = (req, res) => {
     res.json({ status: 1, data: result });
   });
 };
+
+//----------------------------------------------------------------------------------
+
+// LOGIN
+exports.login = (req, res) => {
+  const { username, password } = req.body;
+
+  db.mainDb(
+    "SELECT * FROM admin_users WHERE username=?",
+    [username],
+    (err, result) => {
+      if (err) return res.json({ status: 0, message: "DB error" });
+
+      if (result.length === 0) {
+        return res.json({ status: 0, message: "Invalid username" });
+      }
+
+      if (result[0].password !== password) {
+        return res.json({ status: 0, message: "Invalid password" });
+      }
+
+      return res.json({ status: 1, message: "Login successful" });
+    }
+  );
+};
+
+// CHANGE PASSWORD
+exports.changePassword = (req, res) => {
+  const { username, old_password, new_password } = req.body;
+
+  if (!username || !old_password || !new_password) {
+    return res.json({ status: 0, message: "All fields required" });
+  }
+
+  db.mainDb(
+    "SELECT * FROM admin_users WHERE username=?",
+    [username],
+    (err, result) => {
+      if (err) return res.json({ status: 0, message: "DB error" });
+
+      if (result.length === 0) {
+        return res.json({ status: 0, message: "User not found" });
+      }
+
+      if (result[0].password !== old_password) {
+        return res.json({ status: 0, message: "Old password incorrect" });
+      }
+
+      db.mainDb(
+        "UPDATE admin_users SET password=? WHERE username=?",
+        [new_password, username],
+        (err) => {
+          if (err) return res.json({ status: 0, message: "Update failed" });
+
+          return res.json({
+            status: 1,
+            message: "Password updated successfully"
+          });
+        }
+      );
+    }
+  );
+};
