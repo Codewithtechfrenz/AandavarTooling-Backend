@@ -2595,6 +2595,33 @@ exports.getInvoiceDetails = (req, res) => {
 };
 
 // DELETE INVOICE BY INVOICE NO
+// exports.deleteInvoice = (req, res) => {
+//   const { invoice_no } = req.body;
+
+//   if (!invoice_no) {
+//     return res.json({ status: 0, message: "Invoice No required" });
+//   }
+
+//   const query = `DELETE FROM sales_invoice WHERE Invoice_No = ?`;
+
+//   db.mainDb(query, [invoice_no], (err, result) => {
+//     if (err) {
+//       console.log(err);
+//       return res.json({ status: 0, message: "Delete failed" });
+//     }
+
+//     if (result.affectedRows === 0) {
+//       return res.json({ status: 0, message: "Invoice not found" });
+//     }
+
+//     return res.json({
+//       status: 1,
+//       message: "Invoice deleted successfully"
+//     });
+//   });
+// };
+
+
 exports.deleteInvoice = (req, res) => {
   const { invoice_no } = req.body;
 
@@ -2602,32 +2629,35 @@ exports.deleteInvoice = (req, res) => {
     return res.json({ status: 0, message: "Invoice No required" });
   }
 
-  const query = `DELETE FROM sales_invoice WHERE Invoice_No = ?`;
+  // Step 1: Delete items from sales_master
+  const deleteItems = `DELETE FROM sales_master WHERE Invoice_No = ?`;
 
-  db.mainDb(query, [invoice_no], (err, result) => {
+  db.mainDb(deleteItems, [invoice_no], (err) => {
     if (err) {
       console.log(err);
-      return res.json({ status: 0, message: "Delete failed" });
+      return res.json({ status: 0, message: "Failed to delete items" });
     }
 
-    if (result.affectedRows === 0) {
-      return res.json({ status: 0, message: "Invoice not found" });
-    }
+    // Step 2: Delete invoice
+    const deleteInvoice = `DELETE FROM sales_invoice WHERE Invoice_No = ?`;
 
-    return res.json({
-      status: 1,
-      message: "Invoice deleted successfully"
+    db.mainDb(deleteInvoice, [invoice_no], (err, result) => {
+      if (err) {
+        console.log(err);
+        return res.json({ status: 0, message: "Delete failed" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.json({ status: 0, message: "Invoice not found" });
+      }
+
+      return res.json({
+        status: 1,
+        message: "Invoice and related sales deleted successfully"
+      });
     });
   });
 };
-
-
-
-
-
-
-
-
 
 
 
