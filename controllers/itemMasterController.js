@@ -2629,36 +2629,54 @@ exports.deleteInvoice = (req, res) => {
     return res.json({ status: 0, message: "Invoice No required" });
   }
 
-  // Step 1: Delete items from sales_master
-  const deleteItems = `DELETE FROM sales_master WHERE Invoice_No = ?`;
-
-  db.mainDb(deleteItems, [invoice_no], (err) => {
+  db.mainDb("START TRANSACTION", (err) => {
     if (err) {
       console.log(err);
-      return res.json({ status: 0, message: "Failed to delete items" });
+      return res.json({ status: 0, message: "Transaction error" });
     }
 
-    // Step 2: Delete invoice
-    const deleteInvoice = `DELETE FROM sales_invoice WHERE Invoice_No = ?`;
+    const deleteItems = `DELETE FROM sales_master WHERE Invoice_No = ?`;
 
-    db.mainDb(deleteInvoice, [invoice_no], (err, result) => {
+    db.mainDb(deleteItems, [invoice_no], (err) => {
       if (err) {
-        console.log(err);
-        return res.json({ status: 0, message: "Delete failed" });
+        return db.mainDb("ROLLBACK", () => {
+          console.log(err);
+          res.json({ status: 0, message: "Failed to delete items" });
+        });
       }
 
-      if (result.affectedRows === 0) {
-        return res.json({ status: 0, message: "Invoice not found" });
-      }
+      const deleteInvoice = `DELETE FROM sales_invoice WHERE Invoice_No = ?`;
 
-      return res.json({
-        status: 1,
-        message: "Invoice and related sales deleted successfully"
+      db.mainDb(deleteInvoice, [invoice_no], (err, result) => {
+        if (err) {
+          return db.mainDb("ROLLBACK", () => {
+            console.log(err);
+            res.json({ status: 0, message: "Delete failed" });
+          });
+        }
+
+        if (result.affectedRows === 0) {
+          return db.mainDb("ROLLBACK", () => {
+            res.json({ status: 0, message: "Invoice not found" });
+          });
+        }
+
+        db.mainDb("COMMIT", (err) => {
+          if (err) {
+            return db.mainDb("ROLLBACK", () => {
+              res.json({ status: 0, message: "Commit failed" });
+            });
+          }
+
+          return res.json({
+            status: 1,
+            message: "Invoice and related sales deleted successfully"
+          });
+        });
       });
     });
   });
 };
-
 
 
 
