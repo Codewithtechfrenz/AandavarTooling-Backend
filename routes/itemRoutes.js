@@ -45,8 +45,15 @@ router.get("/getInvoiceNumber", itemController.getNextInvoice);
 
 
 
-// INWARD
+// ITEM INWARD
 router.post('/iteminward', itemController.createItemInward);
+router.get('/getItemInwards', itemController.getItemInwards);
+router.post('/updateItemInward', itemController.updateItemInward);
+router.post('/deleteItemInward', itemController.deleteItemInward);
+
+// CURRENT STOCK
+router.post('/updateCurrentStock', itemController.updateCurrentStockRecord);
+router.post('/deleteCurrentStock', itemController.deleteCurrentStockRecord);
 
 
 

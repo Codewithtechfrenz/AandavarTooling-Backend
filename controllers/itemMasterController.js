@@ -1381,21 +1381,6 @@ exports.createLineReturn = (req, res) => {
 
 
 
-exports.getCurrentStock = (req, res) => {
-    const query = `
-        SELECT *
-        FROM current_stock
-        ORDER BY ItemName ASC
-    `;
-
-    db.mainDb(query, [], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error", error: err });
-        res.json({ status: 1, data: result });
-    });
-};
-
-
-
 // ================= STOCK UPDATE FUNCTION =================
 // ADD YOUR FUNCTION HERE
 function updateItemStock(ItemID, UOMName, qtyChange) {
@@ -2835,49 +2820,190 @@ exports.getWorkOrderHistory = (req, res) => {
 
 //----------------------------------------------------------------------------------
 
+// ================= ITEM INWARD: CREATE =================
 exports.createItemInward = (req, res) => {
-    const { ItemID, UOMID, Quantity, Rate } = req.body;
+    const { ItemName, UOMName, Quantity, Rate } = req.body;
 
-    if (!ItemID || !UOMID || !Quantity || !Rate) {
+    if (!ItemName || !UOMName || !Quantity || !Rate) {
         return res.json({ status: 0, message: "All fields are required" });
     }
 
-    // 1️⃣ Insert inward
+    // 1️⃣ Insert into item_inward
     const insertInward = `
-        INSERT INTO item_inward (ItemID, UOMID, Quantity, Rate)
+        INSERT INTO item_inward (ItemName, UOMName, Quantity, Rate)
         VALUES (?, ?, ?, ?)
     `;
 
-    db.mainDb(insertInward, [ItemID, UOMID, Quantity, Rate], (err) => {
+    db.mainDb(insertInward, [ItemName, UOMName, Number(Quantity), Number(Rate)], (err, result) => {
         if (err) return res.json({ status: 0, message: "DB error inserting inward" });
 
-        // 2️⃣ Update stock
-        updateItemStock(ItemID, UOMID, Quantity)
-            .then(() => res.json({ status: 1, message: "Item inward created & stock updated" }))
+        // 2️⃣ Update current_stock
+        updateCurrentStock(ItemName, UOMName, Number(Quantity))
+            .then(() => res.json({ status: 1, message: "Item inward created & stock updated", InwardID: result.insertId }))
             .catch(errStock => {
-                console.error(errStock);
+                console.error("Stock update error:", errStock);
                 res.json({ status: 0, message: "Stock update failed" });
             });
     });
 };
 
+// ================= ITEM INWARD: GET ALL =================
+exports.getItemInwards = (req, res) => {
+    const query = `SELECT * FROM item_inward ORDER BY InwardID DESC`;
+    db.mainDb(query, [], (err, result) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+        res.json({ status: 1, data: result });
+    });
+};
 
+// ================= ITEM INWARD: UPDATE =================
+exports.updateItemInward = (req, res) => {
+    const { InwardID, ItemName, UOMName, Quantity, Rate } = req.body;
 
+    if (!InwardID || !ItemName || !UOMName || !Quantity || !Rate) {
+        return res.json({ status: 0, message: "All fields are required" });
+    }
+
+    // 1️⃣ Get old record to reverse its stock effect
+    db.mainDb(`SELECT ItemName, UOMName, Quantity FROM item_inward WHERE InwardID = ?`, [InwardID], (err, rows) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+        if (rows.length === 0) return res.json({ status: 0, message: "Inward record not found" });
+
+        const old = rows[0];
+
+        // 2️⃣ Update the inward record
+        const updateQuery = `
+            UPDATE item_inward
+            SET ItemName = ?, UOMName = ?, Quantity = ?, Rate = ?
+            WHERE InwardID = ?
+        `;
+
+        db.mainDb(updateQuery, [ItemName, UOMName, Number(Quantity), Number(Rate), InwardID], async (err2) => {
+            if (err2) return res.json({ status: 0, message: "DB error updating inward" });
+
+            try {
+                // 3️⃣ Reverse old stock, apply new stock
+                await updateCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
+                await updateCurrentStock(ItemName, UOMName, Number(Quantity));
+                res.json({ status: 1, message: "Item inward updated & stock adjusted" });
+            } catch (errStock) {
+                console.error("Stock adjustment error:", errStock);
+                res.json({ status: 0, message: "Stock adjustment failed" });
+            }
+        });
+    });
+};
+
+// ================= ITEM INWARD: DELETE =================
+exports.deleteItemInward = (req, res) => {
+    const { InwardID } = req.body;
+
+    if (!InwardID) {
+        return res.json({ status: 0, message: "InwardID is required" });
+    }
+
+    // 1️⃣ Get record before deleting to reverse stock
+    db.mainDb(`SELECT ItemName, UOMName, Quantity FROM item_inward WHERE InwardID = ?`, [InwardID], (err, rows) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+        if (rows.length === 0) return res.json({ status: 0, message: "Inward record not found" });
+
+        const old = rows[0];
+
+        // 2️⃣ Delete the inward record
+        db.mainDb(`DELETE FROM item_inward WHERE InwardID = ?`, [InwardID], async (err2, result) => {
+            if (err2) return res.json({ status: 0, message: "DB error deleting inward" });
+            if (result.affectedRows === 0) return res.json({ status: 0, message: "Record not found" });
+
+            try {
+                // 3️⃣ Reverse stock
+                await updateCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
+                res.json({ status: 1, message: "Item inward deleted & stock reversed" });
+            } catch (errStock) {
+                console.error("Stock reversal error:", errStock);
+                res.json({ status: 0, message: "Stock reversal failed" });
+            }
+        });
+    });
+};
+
+// ================= CURRENT STOCK: UPDATE/INSERT HELPER =================
+function updateCurrentStock(ItemName, UOMName, qtyChange) {
+    return new Promise((resolve, reject) => {
+        const checkQuery = `
+            SELECT StockID, AvailableQty
+            FROM current_stock
+            WHERE ItemName = ? AND UOMName = ?
+        `;
+
+        db.mainDb(checkQuery, [ItemName, UOMName], (err, result) => {
+            if (err) return reject(err);
+
+            if (result.length > 0) {
+                // Update existing stock
+                const updateQuery = `
+                    UPDATE current_stock
+                    SET AvailableQty = AvailableQty + ?, LastUpdated = NOW()
+                    WHERE StockID = ?
+                `;
+                db.mainDb(updateQuery, [qtyChange, result[0].StockID], err2 =>
+                    err2 ? reject(err2) : resolve()
+                );
+            } else {
+                // Insert new stock row (only if adding qty)
+                const insertQuery = `
+                    INSERT INTO current_stock (ItemName, UOMName, AvailableQty)
+                    VALUES (?, ?, ?)
+                `;
+                db.mainDb(insertQuery, [ItemName, UOMName, qtyChange], err2 =>
+                    err2 ? reject(err2) : resolve()
+                );
+            }
+        });
+    });
+}
+
+// ================= CURRENT STOCK: GET ALL =================
 exports.getCurrentStock = (req, res) => {
-    const query = `
-        SELECT 
-            cs.StockID,
-            im.ItemName,
-            cs.AvailableQty,
-            cs.LastUpdated
-        FROM current_stock cs
-        LEFT JOIN item_master im ON im.SI = cs.ItemID
-        ORDER BY cs.LastUpdated DESC
-    `;
+    const query = `SELECT * FROM current_stock ORDER BY LastUpdated DESC`;
 
     db.mainDb(query, [], (err, result) => {
         if (err) return res.json({ status: 0, message: "DB error" });
-
         res.json({ status: 1, data: result });
+    });
+};
+
+// ================= CURRENT STOCK: UPDATE =================
+exports.updateCurrentStockRecord = (req, res) => {
+    const { StockID, ItemName, UOMName, AvailableQty } = req.body;
+
+    if (!StockID || !ItemName || !UOMName || AvailableQty === undefined) {
+        return res.json({ status: 0, message: "All fields are required" });
+    }
+
+    const query = `
+        UPDATE current_stock
+        SET ItemName = ?, UOMName = ?, AvailableQty = ?, LastUpdated = NOW()
+        WHERE StockID = ?
+    `;
+
+    db.mainDb(query, [ItemName, UOMName, Number(AvailableQty), StockID], (err, result) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+        if (result.affectedRows === 0) return res.json({ status: 0, message: "Stock record not found" });
+        res.json({ status: 1, message: "Current stock updated successfully" });
+    });
+};
+
+// ================= CURRENT STOCK: DELETE =================
+exports.deleteCurrentStockRecord = (req, res) => {
+    const { StockID } = req.body;
+
+    if (!StockID) {
+        return res.json({ status: 0, message: "StockID is required" });
+    }
+
+    db.mainDb(`DELETE FROM current_stock WHERE StockID = ?`, [StockID], (err, result) => {
+        if (err) return res.json({ status: 0, message: "DB error" });
+        if (result.affectedRows === 0) return res.json({ status: 0, message: "Stock record not found" });
+        res.json({ status: 1, message: "Current stock record deleted successfully" });
     });
 };
