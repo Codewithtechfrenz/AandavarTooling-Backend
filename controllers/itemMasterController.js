@@ -2834,11 +2834,8 @@ exports.createItemInward = (req, res) => {
         VALUES (?, ?, ?, ?)
     `;
 
-    db.mainDb(insertInward, [ItemName, UOMName, parseInt(Quantity), Number(Rate)], (err, result) => {
-        if (err) {
-            console.error("Item inward insert error:", err);
-            return res.json({ status: 0, message: "DB error inserting inward", error: err.sqlMessage });
-        }
+    db.mainDb(insertInward, [ItemName, UOMName, Number(Quantity), Number(Rate)], (err, result) => {
+        if (err) return res.json({ status: 0, message: "DB error inserting inward" });
 
         // 2️⃣ Update current_stock
         updateItemCurrentStock(ItemName, UOMName, Number(Quantity))
