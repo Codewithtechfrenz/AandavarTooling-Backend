@@ -2886,8 +2886,9 @@ exports.getItemInwards = (req, res) => {
 exports.updateItemInward = (req, res) => {
     const { InwardID, ItemName, UOMName, Quantity, Rate } = req.body;
 
-    if (!InwardID || !ItemName || !Quantity || !Rate) {
-        return res.json({ status: 0, message: "All fields are required" });
+    // 🔥 FIXED VALIDATION
+    if (!InwardID || !Quantity || !Rate) {
+        return res.json({ status: 0, message: "Required fields missing" });
     }
 
     const qty = Number(Quantity);
@@ -2897,6 +2898,7 @@ exports.updateItemInward = (req, res) => {
         return res.json({ status: 0, message: "Invalid numbers" });
     }
 
+    // 1️⃣ Get old record
     db.mainDb(
         `SELECT ItemName, UOMName, Quantity FROM Item_Inward WHERE InwardID = ?`,
         [InwardID],
@@ -2913,33 +2915,44 @@ exports.updateItemInward = (req, res) => {
 
             const old = rows[0];
 
+            // use old values if not provided
+            const newItemName = ItemName || old.ItemName;
+            const newUOM = UOMName || old.UOMName;
+
             const updateQuery = `
                 UPDATE Item_Inward
                 SET ItemName = ?, UOMName = ?, Quantity = ?, Rate = ?
                 WHERE InwardID = ?
             `;
 
-            db.mainDb(updateQuery, [ItemName, UOMName, qty, rateVal, InwardID], async (err2) => {
+            db.mainDb(
+                updateQuery,
+                [newItemName, newUOM, qty, rateVal, InwardID],
+                async (err2) => {
 
-                if (err2) {
-                    console.error("Update Error:", err2);
-                    return res.json({ status: 0, message: err2.message });
+                    if (err2) {
+                        console.error("Update Error:", err2);
+                        return res.json({ status: 0, message: err2.message });
+                    }
+
+                    try {
+                        // reverse old stock
+                        await updateItemCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
+
+                        // apply new stock
+                        await updateItemCurrentStock(newItemName, newUOM, qty);
+
+                        res.json({
+                            status: 1,
+                            message: "Updated & stock adjusted"
+                        });
+
+                    } catch (errStock) {
+                        console.error("Stock error:", errStock);
+                        res.json({ status: 0, message: "Stock update failed" });
+                    }
                 }
-
-                try {
-                    await updateItemCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
-                    await updateItemCurrentStock(ItemName, UOMName, qty);
-
-                    res.json({
-                        status: 1,
-                        message: "Updated & stock adjusted"
-                    });
-
-                } catch (errStock) {
-                    console.error("Stock error:", errStock);
-                    res.json({ status: 0, message: "Stock update failed" });
-                }
-            });
+            );
         }
     );
 };
