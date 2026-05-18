@@ -2824,34 +2824,60 @@ exports.getWorkOrderHistory = (req, res) => {
 exports.createItemInward = (req, res) => {
     const { ItemName, UOMName, Quantity, Rate } = req.body;
 
-    if (!ItemName || !UOMName || !Quantity || !Rate) {
-        return res.json({ status: 0, message: "All fields are required" });
+    if (!ItemName || !Quantity || !Rate) {
+        return res.json({ status: 0, message: "Required fields missing" });
     }
 
-    // 1️⃣ Insert into item_inward
+    const qty = Number(Quantity);
+    const rateVal = Number(Rate);
+
+    if (isNaN(qty) || isNaN(rateVal)) {
+        return res.json({ status: 0, message: "Invalid number values" });
+    }
+
     const insertInward = `
-        INSERT INTO item_inward (ItemName, UOMName, Quantity, Rate)
+        INSERT INTO Item_Inward (ItemName, UOMName, Quantity, Rate)
         VALUES (?, ?, ?, ?)
     `;
 
-    db.mainDb(insertInward, [ItemName, UOMName, Number(Quantity), Number(Rate)], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error inserting inward" });
+    db.mainDb(insertInward, [ItemName.trim(), UOMName || null, qty, rateVal], async (err, result) => {
 
-        // 2️⃣ Update current_stock
-        updateItemCurrentStock(ItemName, UOMName, Number(Quantity))
-            .then(() => res.json({ status: 1, message: "Item inward created & stock updated", InwardID: result.insertId }))
-            .catch(errStock => {
-                console.error("Stock update error:", errStock);
-                res.json({ status: 0, message: "Stock update failed" });
+        if (err) {
+            console.error("Insert Error:", err);
+            return res.json({ status: 0, message: err.message });
+        }
+
+        try {
+            await updateItemCurrentStock(ItemName, UOMName, qty);
+
+            res.json({
+                status: 1,
+                message: "Item inward created & stock updated",
+                InwardID: result.insertId
             });
+
+        } catch (errStock) {
+            console.error("Stock error:", errStock);
+
+            // rollback insert
+            db.mainDb(`DELETE FROM Item_Inward WHERE InwardID = ?`, [result.insertId]);
+
+            res.json({ status: 0, message: "Stock update failed, insert rolled back" });
+        }
     });
 };
 
+
 // ================= ITEM INWARD: GET ALL =================
 exports.getItemInwards = (req, res) => {
-    const query = `SELECT * FROM item_inward ORDER BY InwardID DESC`;
+    const query = `SELECT * FROM Item_Inward ORDER BY InwardID DESC`;
+
     db.mainDb(query, [], (err, result) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
+        if (err) {
+            console.error("Fetch Error:", err);
+            return res.json({ status: 0, message: err.message });
+        }
+
         res.json({ status: 1, data: result });
     });
 };
@@ -2860,38 +2886,62 @@ exports.getItemInwards = (req, res) => {
 exports.updateItemInward = (req, res) => {
     const { InwardID, ItemName, UOMName, Quantity, Rate } = req.body;
 
-    if (!InwardID || !ItemName || !UOMName || !Quantity || !Rate) {
+    if (!InwardID || !ItemName || !Quantity || !Rate) {
         return res.json({ status: 0, message: "All fields are required" });
     }
 
-    // 1️⃣ Get old record to reverse its stock
-    db.mainDb(`SELECT ItemName, UOMName, Quantity FROM item_inward WHERE InwardID = ?`, [InwardID], (err, rows) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
-        if (rows.length === 0) return res.json({ status: 0, message: "Inward record not found" });
+    const qty = Number(Quantity);
+    const rateVal = Number(Rate);
 
-        const old = rows[0];
+    if (isNaN(qty) || isNaN(rateVal)) {
+        return res.json({ status: 0, message: "Invalid numbers" });
+    }
 
-        // 2️⃣ Update the inward record
-        const updateQuery = `
-            UPDATE item_inward
-            SET ItemName = ?, UOMName = ?, Quantity = ?, Rate = ?
-            WHERE InwardID = ?
-        `;
+    db.mainDb(
+        `SELECT ItemName, UOMName, Quantity FROM Item_Inward WHERE InwardID = ?`,
+        [InwardID],
+        (err, rows) => {
 
-        db.mainDb(updateQuery, [ItemName, UOMName, Number(Quantity), Number(Rate), InwardID], async (err2) => {
-            if (err2) return res.json({ status: 0, message: "DB error updating inward" });
-
-            try {
-                // 3️⃣ Reverse old qty, apply new qty
-                await updateItemCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
-                await updateItemCurrentStock(ItemName, UOMName, Number(Quantity));
-                res.json({ status: 1, message: "Item inward updated & stock adjusted" });
-            } catch (errStock) {
-                console.error("Stock adjustment error:", errStock);
-                res.json({ status: 0, message: "Stock adjustment failed" });
+            if (err) {
+                console.error(err);
+                return res.json({ status: 0, message: err.message });
             }
-        });
-    });
+
+            if (rows.length === 0) {
+                return res.json({ status: 0, message: "Record not found" });
+            }
+
+            const old = rows[0];
+
+            const updateQuery = `
+                UPDATE Item_Inward
+                SET ItemName = ?, UOMName = ?, Quantity = ?, Rate = ?
+                WHERE InwardID = ?
+            `;
+
+            db.mainDb(updateQuery, [ItemName, UOMName, qty, rateVal, InwardID], async (err2) => {
+
+                if (err2) {
+                    console.error("Update Error:", err2);
+                    return res.json({ status: 0, message: err2.message });
+                }
+
+                try {
+                    await updateItemCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
+                    await updateItemCurrentStock(ItemName, UOMName, qty);
+
+                    res.json({
+                        status: 1,
+                        message: "Updated & stock adjusted"
+                    });
+
+                } catch (errStock) {
+                    console.error("Stock error:", errStock);
+                    res.json({ status: 0, message: "Stock update failed" });
+                }
+            });
+        }
+    );
 };
 
 // ================= ITEM INWARD: DELETE =================
@@ -2899,33 +2949,56 @@ exports.deleteItemInward = (req, res) => {
     const { InwardID } = req.body;
 
     if (!InwardID) {
-        return res.json({ status: 0, message: "InwardID is required" });
+        return res.json({ status: 0, message: "InwardID required" });
     }
 
-    // 1️⃣ Get record before deleting to reverse stock
-    db.mainDb(`SELECT ItemName, UOMName, Quantity FROM item_inward WHERE InwardID = ?`, [InwardID], (err, rows) => {
-        if (err) return res.json({ status: 0, message: "DB error" });
-        if (rows.length === 0) return res.json({ status: 0, message: "Inward record not found" });
+    db.mainDb(
+        `SELECT ItemName, UOMName, Quantity FROM Item_Inward WHERE InwardID = ?`,
+        [InwardID],
+        (err, rows) => {
 
-        const old = rows[0];
-
-        // 2️⃣ Delete the record
-        db.mainDb(`DELETE FROM item_inward WHERE InwardID = ?`, [InwardID], async (err2, result) => {
-            if (err2) return res.json({ status: 0, message: "DB error deleting inward" });
-            if (result.affectedRows === 0) return res.json({ status: 0, message: "Record not found" });
-
-            try {
-                // 3️⃣ Reverse stock
-                await updateItemCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
-                res.json({ status: 1, message: "Item inward deleted & stock reversed" });
-            } catch (errStock) {
-                console.error("Stock reversal error:", errStock);
-                res.json({ status: 0, message: "Stock reversal failed" });
+            if (err) {
+                console.error(err);
+                return res.json({ status: 0, message: err.message });
             }
-        });
-    });
-};
 
+            if (rows.length === 0) {
+                return res.json({ status: 0, message: "Record not found" });
+            }
+
+            const old = rows[0];
+
+            db.mainDb(
+                `DELETE FROM Item_Inward WHERE InwardID = ?`,
+                [InwardID],
+                async (err2, result) => {
+
+                    if (err2) {
+                        console.error(err2);
+                        return res.json({ status: 0, message: err2.message });
+                    }
+
+                    if (result.affectedRows === 0) {
+                        return res.json({ status: 0, message: "Delete failed" });
+                    }
+
+                    try {
+                        await updateItemCurrentStock(old.ItemName, old.UOMName, -Number(old.Quantity));
+
+                        res.json({
+                            status: 1,
+                            message: "Deleted & stock reversed"
+                        });
+
+                    } catch (errStock) {
+                        console.error("Stock error:", errStock);
+                        res.json({ status: 0, message: "Stock reversal failed" });
+                    }
+                }
+            );
+        }
+    );
+};
 // ================= ITEM CURRENT STOCK: UPDATE/INSERT HELPER =================
 function updateItemCurrentStock(ItemName, UOMName, qtyChange) {
     return new Promise((resolve, reject) => {
